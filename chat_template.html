@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat View</title>
+    <style>
+        /* --- Базовые стили --- */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: sans-serif;
+            background-color: #2b2b2b; /* Темный фон */
+            color: #d0d0d0; /* Светлый текст */
+            font-size: 14px;
+            overflow: hidden;
+        }
+
+        #chat-container {
+            height: 100%;
+            overflow-y: auto;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+
+        /* --- Стили сообщений --- */
+        .message {
+            font-family: Consolas, 'Courier New', monospace;
+            color: #deebff;
+            margin-bottom: 20px;
+            clear: both;
+            position: relative;
+            padding-right: 30px;
+            padding-left: 30px;
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        .message .prefix {
+            font-weight: bold;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .user-message .prefix { color: #87ceeb; } /* Голубой для "Вы:" */
+        .model-message .prefix { color: #98fb98; } /* Светло-зеленый для "ИИ:" */
+        
+        /* --- НОВЫЙ СТИЛЬ для системных сообщений (RAG) --- */
+        .system-message {
+            font-style: italic;
+            color: #999; /* Серый цвет для системных уведомлений */
+            text-align: center; /* Центрируем */
+            margin-bottom: 15px;
+            font-size: 0.9em;
+        }
+        /* Убираем префиксы и кнопки для системных сообщений */
+        .system-message .prefix,
+        .system-message .toggle-exclusion-button,
+        .system-message .scroll-to-top-button {
+            display: none;
+        }
+        .system-message .content { padding: 0 !important; }
+
+        /* Стили для контента внутри сообщений */
+        .message .content p { margin-top: 0.3em; margin-bottom: 0.5em; line-height: 1.4; }
+        .message .content ul, .message .content ol { margin-top: 0.5em; margin-bottom: 0.5em; padding-left: 25px; }
+        .message .content li { margin-bottom: 0.3em; }
+
+        .user-message pre {
+            display: block; background-color: #333333; color: #d0d0d0;
+            border: 1px solid #444; padding: 10px; border-radius: 4px;
+            font-family: Consolas, 'Courier New', monospace; white-space: pre-wrap;
+            word-wrap: break-word; margin-top: 5px;
+        }
+
+        code { padding: 1px 4px; border-radius: 3px; font-family: Consolas, 'Courier New', monospace; font-size: 0.95em; color: #ccc;}
+        hr { border: 0; height: 1px; background-color: #555; margin: 10px 0; }
+
+        /* --- Стили для блоков кода с подсветкой Pygments --- */
+        .codehilite {
+            display: block; background: #333333; border: 1px solid #444;
+            padding: 10px; padding-top: 25px; border-radius: 4px;
+            position: relative; color: #d0d0d0; margin-top: 5px;
+            overflow: hidden; font-family: Consolas, 'Courier New', monospace; font-size: 0.95em;
+        }
+        .codehilite pre {
+            background: transparent !important; border: none !important;
+            padding: 0 !important; margin: 0 !important;
+            white-space: pre-wrap !important; word-wrap: break-word !important;
+            color: inherit !important; display: block;
+        }
+
+        /* Pygments CSS (стиль 'native') */
+        .codehilite .hll { background-color: #49483e } .codehilite .c { color: #75715e; font-style: italic }
+        .codehilite .err { color: #960050; background-color: #1e0010 } .codehilite .k { color: #66d9ef }
+        .codehilite .l { color: #ae81ff } .codehilite .n { color: #f8f8f2 } .codehilite .o { color: #f92672 }
+        .codehilite .p { color: #f8f8f2 } .codehilite .ch { color: #75715e; font-style: italic }
+        .codehilite .cm { color: #75715e; font-style: italic } .codehilite .cp { color: #75715e; font-style: italic }
+        .codehilite .cpf { color: #75715e; font-style: italic } .codehilite .c1 { color: #75715e; font-style: italic }
+        .codehilite .cs { color: #75715e; font-style: italic } .codehilite .gd { color: #f92672 }
+        .codehilite .ge { font-style: italic } .codehilite .gi { color: #a6e22e } .codehilite .gs { font-weight: bold }
+        .codehilite .gu { color: #75715e } .codehilite .kc { color: #66d9ef } .codehilite .kd { color: #66d9ef }
+        .codehilite .kn { color: #f92672 } .codehilite .kp { color: #66d9ef } .codehilite .kr { color: #66d9ef }
+        .codehilite .kt { color: #66d9ef } .codehilite .ld { color: #e6db74 } .codehilite .m { color: #ae81ff }
+        .codehilite .s { color: #e6db74 } .codehilite .na { color: #a6e22e } .codehilite .nb { color: #f8f8f2 }
+        .codehilite .nc { color: #a6e22e } .codehilite .no { color: #66d9ef } .codehilite .nd { color: #a6e22e }
+        .codehilite .ni { color: #f8f8f2 } .codehilite .ne { color: #a6e22e } .codehilite .nf { color: #a6e22e }
+        .codehilite .nl { color: #f8f8f2 } .codehilite .nn { color: #f8f8f2 } .codehilite .nx { color: #a6e22e }
+        .codehilite .py { color: #f8f8f2 } .codehilite .nt { color: #f92672 } .codehilite .nv { color: #f8f8f2 }
+        .codehilite .ow { color: #f92672 } .codehilite .w { color: #f8f8f2 } .codehilite .mb { color: #ae81ff }
+        .codehilite .mf { color: #ae81ff } .codehilite .mh { color: #ae81ff } .codehilite .mi { color: #ae81ff }
+        .codehilite .mo { color: #ae81ff } .codehilite .sa { color: #e6db74 } .codehilite .sb { color: #e6db74 }
+        .codehilite .sc { color: #e6db74 } .codehilite .dl { color: #e6db74 } .codehilite .sd { color: #e6db74 }
+        .codehilite .s2 { color: #e6db74 } .codehilite .se { color: #ae81ff } .codehilite .sh { color: #e6db74 }
+        .codehilite .si { color: #e6db74 } .codehilite .sx { color: #e6db74 } .codehilite .sr { color: #e6db74 }
+        .codehilite .s1 { color: #e6db74 } .codehilite .ss { color: #e6db74 } .codehilite .bp { color: #f8f8f2 }
+        .codehilite .fm { color: #a6e22e } .codehilite .vc { color: #f8f8f2 } .codehilite .vg { color: #f8f8f2 }
+        .codehilite .vi { color: #f8f8f2 } .codehilite .vm { color: #f8f8f2 } .codehilite .il { color: #ae81ff }
+
+        /* --- Кнопки и интерактивные элементы --- */
+        .copy-code-button {
+            position: absolute; bottom: 5px; right: 5px; font-size: 0.8em;
+            padding: 4px 8px; cursor: pointer; border: 1px solid #7fa4f9;
+            border-radius: 3px; background-color: #444; color: #7fa4f9; z-index: 1;
+        }
+        .copy-code-button:hover { background-color: #555; border-color: #ccc; color: #fff; }
+
+        .toggle-exclusion-button {
+            position: absolute; top: 2px; right: 5px; background: none; border: none;
+            font-size: 1.4em; line-height: 1; padding: 2px 4px; cursor: pointer;
+            color: #777; z-index: 2; transition: color 0.2s ease;
+        }
+        .toggle-exclusion-button:hover { color: #ccc; }
+
+        .scroll-to-top-button {
+            position: absolute; bottom: 2px; left: -5px; background: none;
+            border: 1px solid #777; border-radius: 50%; font-size: 1.1em;
+            line-height: 1; padding: 3px; margin: 3px; cursor: pointer;
+            color: #777; z-index: 2; transition: color 0.2s ease;
+        }
+        .scroll-to-top-button:hover { color: #ccc; }
+
+        /* Сообщение об ошибке */
+        .error-message {
+            color: #ff6b6b; background-color: rgba(255, 107, 107, 0.1);
+            border: 1px solid #ff6b6b; padding: 10px; border-radius: 4px;
+            margin-bottom: 10px; white-space: pre-wrap; word-wrap: break-word;
+        }
+
+        /* --- Статус и состояние --- */
+        #loader {
+            z-index: 10; width: 40px; height: 40px; margin: 20px auto;
+            border: 5px solid #87a9ff; border-radius: 50%;
+            border-top: 5px solid #002c70; animation: spin 1s linear infinite;
+            display: block; box-sizing: border-box;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .message.excluded { opacity: 0.3; }
+        .message.excluded:hover { opacity: 0.9; }
+
+        /* Спойлер для исключенных сообщений */
+        details { margin-bottom: 5px; }
+        details > summary {
+            list-style: none; cursor: pointer; padding: 5px; background-color: #444;
+            border-radius: 4px; color: #eee;
+        }
+        details > summary::-webkit-details-marker { display: none; }
+        details > summary:before { content: '▶'; display: inline-block; width: 1em; padding-right: 5px; transition: transform 0.2s ease-in-out; }
+        details[open] > summary:before { transform: rotate(90deg); }
+        details:not([open]) > .content { display: none !important; }
+        details[open] > .content { display: block !important; }
+
+    </style>
+</head>
+<body>
+    <div id="chat-container"></div>
+    <script src="qrc:/qtwebchannel/qwebchannel.js"></script>
+    <script>
+        let chatContainer;
+        let pyBridge;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            chatContainer = document.getElementById('chat-container');
+            new QWebChannel(qt.webChannelTransport, (channel) => {
+                pyBridge = channel.objects.py_bridge;
+                console.log("QWebChannel: py_bridge подключен.");
+            });
+        });
+
+        function clearChatContent() {
+            if (chatContainer) chatContainer.innerHTML = '';
+            console.log("JS: Чат очищен.");
+        }
+
+        function appendMessage(role, htmlString, messageIndex, isExcluded, texts) {
+            if (!chatContainer) return;
+
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', role + '-message');
+            messageDiv.dataset.messageIndex = messageIndex;
+
+            if (isExcluded) messageDiv.classList.add('excluded');
+
+            const prefixSpan = document.createElement('span');
+            prefixSpan.classList.add('prefix');
+            prefixSpan.textContent = (role === 'user') ? texts.user_prefix : texts.model_prefix;
+            messageDiv.appendChild(prefixSpan);
+
+            let contentElement;
+            if (isExcluded) {
+                const details = document.createElement('details');
+                const summary = document.createElement('summary');
+                summary.textContent = texts.spoiler_summary;
+                const contentDiv = document.createElement('div');
+                contentDiv.classList.add('content');
+                contentDiv.innerHTML = htmlString;
+                const plainText = contentDiv.textContent || contentDiv.innerText;
+                summary.title = plainText.split('\n').slice(0, 3).join('\n');
+                details.appendChild(summary);
+                details.appendChild(contentDiv);
+                contentElement = details;
+            } else {
+                contentElement = document.createElement('div');
+                contentElement.classList.add('content');
+                contentElement.innerHTML = htmlString;
+            }
+            messageDiv.appendChild(contentElement);
+
+            if (role === 'model') addCopyButtons(contentElement, texts);
+
+            if (messageIndex >= 0) { // Не добавляем кнопки для системных сообщений
+                const scrollTopButton = document.createElement('button');
+                scrollTopButton.className = 'scroll-to-top-button';
+                scrollTopButton.textContent = '⮝';
+                scrollTopButton.title = texts.scroll_top_tooltip;
+                scrollTopButton.onclick = (event) => {
+                    const msgEl = event.target.closest('.message');
+                    if (msgEl) msgEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                };
+                messageDiv.appendChild(scrollTopButton);
+
+                const toggleButton = document.createElement('button');
+                toggleButton.className = 'toggle-exclusion-button';
+                toggleButton.textContent = isExcluded ? '👁' : '🛇';
+                toggleButton.title = isExcluded ? texts.include_tooltip : texts.exclude_tooltip;
+                toggleButton.onclick = () => toggleExclusion(messageIndex);
+                messageDiv.appendChild(toggleButton);
+            }
+
+            chatContainer.appendChild(messageDiv);
+        }
+
+        function appendErrorMessage(errorString) {
+            if (!chatContainer) return;
+            const errorDiv = document.createElement('div');
+            errorDiv.classList.add('error-message');
+            errorDiv.textContent = errorString;
+            chatContainer.appendChild(errorDiv);
+        }
+
+        function toggleExclusion(index) {
+            if (pyBridge) {
+                console.log(`JS: Запрос на переключение исключения для индекса ${index}`);
+                pyBridge.request_toggle_api_exclusion(index);
+            } else {
+                console.error('pyBridge не доступен для toggleExclusion');
+            }
+        }
+
+        function showLoader() {
+            if (!chatContainer || document.getElementById('loader')) return;
+            const loaderDiv = document.createElement('div');
+            loaderDiv.id = 'loader';
+            chatContainer.appendChild(loaderDiv);
+        }
+
+        function hideLoader() {
+            const loaderElement = document.getElementById('loader');
+            if (loaderElement) loaderElement.remove();
+        }
+
+        function scrollToBottom() {
+             if (chatContainer) requestAnimationFrame(() => { chatContainer.scrollTop = chatContainer.scrollHeight; });
+        }
+
+        function addCopyButtons(containerElement, texts) {
+            containerElement.querySelectorAll('.codehilite').forEach(block => {
+                if (block.querySelector('.copy-code-button')) return;
+                const button = document.createElement('button');
+                button.textContent = texts.copy_button_text;
+                button.classList.add('copy-code-button');
+                button.onclick = () => copyCode(button, texts);
+                block.appendChild(button);
+            });
+        }
+
+        function copyCode(buttonElement, texts) {
+            const codeBlockDiv = buttonElement.closest('.codehilite');
+            if (!codeBlockDiv) return;
+            const preElement = codeBlockDiv.querySelector('pre');
+            if (!preElement || !pyBridge) return;
+            pyBridge.copy_code_to_clipboard(preElement.innerText || preElement.textContent);
+            buttonElement.textContent = texts.copied_button_text;
+            setTimeout(() => { buttonElement.textContent = texts.copy_button_text; }, 1500);
+        }
+    </script>
+</body>
+</html>

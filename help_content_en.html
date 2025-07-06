@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Help - GitGemini Pro</title>
+    <style>
+        html, body {
+            margin: 0; padding: 0; font-family: sans-serif;
+            background-color: #2b2b2b; color: #d0d0d0; font-size: 14px;
+        }
+        body { padding: 15px; line-height: 1.6; }
+        h1, h2, h3 {
+            color: #87ceeb; border-bottom: 1px solid #555;
+            padding-bottom: 5px; margin-top: 1.5em; margin-bottom: 0.8em;
+        }
+        h1 { margin-top: 0.5em; }
+        ul, ol { margin-top: 0.5em; margin-bottom: 0.8em; padding-left: 30px; }
+        li { margin-bottom: 0.5em; }
+        code {
+            background-color: #444; color: #ccc; padding: 2px 5px;
+            border-radius: 3px; font-family: Consolas, 'Courier New', monospace;
+            font-size: 0.95em;
+        }
+        .shortcut { font-weight: bold; color: #98fb98; }
+        a { color: #66d9ef; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .important {
+            background-color: rgba(255, 235, 59, 0.1); /* Yellowish background */
+            border-left: 4px solid #ffeb3b; /* Yellow bar on the left */
+            padding: 10px 15px;
+            margin: 1em 0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Help - GitGemini Pro</h1>
+
+    <h2>Purpose of the Application</h2>
+    <p>
+        <b>GitGemini Pro</b> is an intelligent assistant for working with the codebase of projects hosted on GitHub. The application allows you to have a dialogue with the Google Gemini language model, using your repository's files as context.
+    </p>
+    <p>
+        Instead of sending all files in their entirety, GitGemini Pro uses a modern **RAG (Retrieval-Augmented Generation)** approach based on semantic vector search. This allows for more accurate and relevant answers while saving API resources.
+    </p>
+
+    <h2>How It Works: RAG and Vector Search</h2>
+    <p>Working with the application consists of two main stages:</p>
+    <ol>
+        <li>
+            <b>Analysis (Indexing):</b> When you click "Analyze Repository," the program performs the following actions:
+            <ul>
+                <li>It reads each file that matches the specified extensions.</li>
+                <li>Each file is broken down into small, logically connected fragments (chunks).</li>
+                <li>A brief description (summary) is created for each file.</li>
+                <li>Both chunks and summaries are converted into numerical vectors (embeddings) using a local neural network. These vectors reflect the semantic meaning of the text.</li>
+                <li>All vectors and their corresponding texts are saved to a local vector database (`ChromaDB`).</li>
+            </ul>
+        </li>
+        <li>
+            <b>Dialogue (Query and Response):</b> When you ask a question:
+            <ul>
+                <li>Your question is also converted into a vector.</li>
+                <li>The program searches the vector database for text fragments whose vectors are most "similar" to your question's vector. This allows finding information that is relevant by meaning, not just by keywords.</li>
+                <li>The most relevant fragments found are collected to form the context.</li>
+                <li>This context, along with your question and the chat history, is sent to the Gemini model to generate a response.</li>
+            </ul>
+        </li>
+    </ol>
+    <p>
+        This approach allows feeding the language model only the most necessary information from the entire project, making the answers fast, accurate, and cost-effective.
+    </p>
+
+    <h2>First Launch: Setup</h2>
+    <p>For the first launch, you need to complete three mandatory setup steps.</p>
+    
+    <h3>Step 1: Download the Semantic Search Model</h3>
+    <div class="important">
+        <p><strong>Important:</strong> To convert texts into vectors (embeddings), the application uses the local ONNX model `all-MiniLM-L6-v2`. Since large files are not stored in the repository, you must download it manually once.</p>
+        <ol>
+            <li>In the project's root folder, create a new folder structure named <code>resources/models/onnx_model</code>.</li>
+            <li>Go to the model's page on Hugging Face using <a href="https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/tree/main/onnx">this link</a>.</li>
+            <li>Find the <code>model.onnx</code> file and download it (click the down arrow icon).</li>
+            <li>Place the downloaded file into the <code>resources/models/onnx_model</code> folder you created.</li>
+        </ol>
+    </div>
+
+    <h3>Step 2: Configure Access Keys</h3>
+    <div class="important">
+        <p>The application requires two keys to function:</p>
+        <ul>
+            <li><b>Gemini API Key:</b> Your key to access Google Gemini models. You can get it from <a href="https://makersuite.google.com/app/apikey">Google AI Studio</a>.</li>
+            <li><b>GitHub Personal Access Token (PAT):</b> A token to access repositories via the GitHub API.</li>
+        </ul>
+    </div>
+    <h4>How to create a GitHub PAT:</h4>
+    <ol>
+        <li>Go to your GitHub account settings: <a href="https://github.com/settings/tokens">Tokens (classic)</a>.</li>
+        <li>Click "Generate new token" -> "Generate new token (classic)".</li>
+        <li>Give the token a name (e.g., "GitGeminiPro").</li>
+        <li>Set an expiration date.</li>
+        <li>In the "Select scopes" section, check the box next to <code>repo</code>. This will grant access to your repositories, including private ones.</li>
+        <li>Click "Generate token". <b>Copy the token immediately!</b> You will not be able to see it again.</li>
+    </ol>
+    <p>
+        After obtaining the keys, enter them into the corresponding fields in the "Settings" section and click "Save". The keys will be saved locally to a <code>.env</code> file.
+    </p>
+
+    <h3>Step 3: Compile Tree-sitter Grammars (For Code Analysis)</h3>
+    <div class="important">
+        <p>
+            For intelligent code splitting based on syntax, GitGemini Pro uses the Tree-sitter library. You need to compile the necessary grammars once.
+        </p>
+        <ol>
+            <li>In the project's root folder, create a new folder named <code>grammars</code>.</li>
+            <li>Clone the required grammar repositories into the <code>grammars</code> folder. A recommended set includes:
+                <ul>
+                    <li><code>git clone https://github.com/tree-sitter/tree-sitter-python</code></li>
+                    <li><code>git clone https://github.com/tree-sitter/tree-sitter-javascript</code></li>
+                    <li><code>git clone https://github.com/tree-sitter/tree-sitter-html</code></li>
+                    <li><code>git clone https://github.com/tree-sitter/tree-sitter-css</code></li>
+                    <li><code>git clone https://github.com/tree-sitter/tree-sitter-json</code></li>
+                    <li><code>git clone https://github.com/tree-sitter/tree-sitter-java</code></li>
+                    <li><code>git clone https://github.com/tree-sitter/tree-sitter-c-sharp</code></li>
+                    <li><code>git clone https://github.com/tree-sitter/tree-sitter-cpp</code></li>
+                    <li><code>git clone https://github.com/tree-sitter/tree-sitter-go</code></li>
+                    <li><code>git clone https://github.com/tree-sitter/tree-sitter-ruby</code></li>
+                    <li><code>git clone https://github.com/tree-sitter/tree-sitter-rust</code></li>
+                    <li><code>git clone https://github.com/tree-sitter/tree-sitter-bash</code></li>
+                    <li><code>git clone https://github.com/ikatyang/tree-sitter-yaml</code></li>
+                    <!-- Note: tree-sitter-typescript, tree-sitter-php, tree-sitter-sql are excluded due to compilation issues on Windows. -->
+                </ul>
+            </li>
+            <li>Ensure you have <b>C/C++ build tools</b> installed for your operating system:
+                <ul>
+                    <li><b>Windows:</b> Install "Build Tools for Visual Studio" (Desktop development with C++ workload). Then, open <b>"x64 Native Tools Command Prompt for VS 2022"</b>.</li>
+                    <li><b>Linux (Debian/Ubuntu):</b> <code>sudo apt-get install build-essential</code></li>
+                    <li><b>macOS:</b> <code>xcode-select --install</code></li>
+                </ul>
+            </li>
+            <li>In your activated Python virtual environment, from the project's root directory, run the compilation script:
+                <pre><code>python build_grammars.py</code></pre>
+            </li>
+            <li>This will create a single library file (e.g., <code>languages.dll</code>) in the <code>resources/grammars</code> folder. This file is required for intelligent code parsing.</li>
+        </ol>
+        <p>
+            If a grammar fails to compile (e.g., due to specific complexities on Windows), the application will automatically fall back to a simpler character-based splitting method for files of that language. The core functionality will remain unaffected.
+        </p>
+    </div>
+
+    <h2>Main Interface Elements</h2>
+    <ul>
+        <li><b>GitHub Repository URL:</b> Field to paste your repository URL (e.g., <code>https://github.com/user/repository</code>).</li>
+        <li><b>Branch Selection:</b> A dropdown list that automatically populates with the branches of the specified repository. Allows selecting a specific branch for analysis.</li>
+        <li><b>Analyze Repository:</b> Button to start the indexing process (creating the vector database).</li>
+        <li><b>Cancel Analysis:</b> Allows stopping the indexing process.</li>
+        <li><b>View Summaries (👁️ button):</b> Opens a separate window where you can see a list of all analyzed files and their brief AI-generated summaries. The window has a file search function.</li>
+        <li><b>Settings (collapsible panel):</b>
+            <ul>
+                <li><b>API Key / GitHub Token:</b> Fields for entering and saving your access keys.</li>
+                <li><b>AI Model:</b> Dropdown list to select a Gemini model.</li>
+                <li><b>Max Response Tokens:</b> Limit on the length of the model's response.</li>
+                <li><b>File Extensions:</b> Checkboxes to select file types to be included in the analysis.</li>
+            </ul>
+        </li>
+        <div class="important">
+            <p><strong>Tip:</strong> If you encounter errors related to quotas (quota exceeded) or temporary model unavailability, try changing the AI model in the settings. For example, switch from a more powerful version (gemini-1.5-pro) to a faster one (gemini-1.5-flash) or vice versa. Sometimes this helps to bypass temporary API-side restrictions.</p>
+        </div>
+        <li><b>Instructions (collapsible panel):</b> Field for system instructions and template management.</li>
+        <li><b>Dialogue:</b> Area displaying the conversation history.
+            <ul>
+                <li>System messages about the stages of the RAG process are displayed in gray italics.</li>
+                <li>The <code>🛇</code> / <code>👁</code> button to the right of a message: Excludes/includes the message from the API context.</li>
+            </ul>
+        </li>
+        <li><b>Your Request:</b> Field for entering your message to the model. <span class="shortcut">Ctrl+Enter</span> sends the request.</li>
+        <li><b>Send / Cancel:</b> Buttons to send a request or cancel it.</li>
+        <li><b>Status Bar:</b> Displays status messages, analysis progress, and token count.</li>
+    </ul>
+
+    <h2>Menu</h2>
+    <ul>
+        <li><b>File:</b> Standard actions for managing sessions (New, Open, Save, Exit).
+            <div class="important">
+            <p><strong>Important note on sessions:</strong> When you save a session (e.g., `my-session`), two items are created:</p>
+            <ul>
+                <li>A file <code>my-session.gpcs</code>, which stores the chat history and settings.</li>
+                <li>A folder <code>my-session_vectordb</code>, which contains the vector database for this project.</li>
+            </ul>
+            <p>To transfer or archive a session, you must copy **both the file and the folder**.</p>
+            </div>
+        </li>
+        <li><b>Help:</b> Opens this window and information about the program.</li>
+    </ul>
+
+</body>
+</html>

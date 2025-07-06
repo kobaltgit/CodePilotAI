@@ -1,0 +1,84 @@
+# --- Файл: .gitignore ---
+
+# Файлы окружения (содержат секретные ключи)
+.env
+*.env
+
+# Логи
+/logs/
+*.log
+
+# Виртуальное окружение
+venv/
+.venv/
+
+# Файлы сессий
+*.gpcs
+
+# Игнорирование специфичных для IDE файлов
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Кэш Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Дистрибутивы и пакеты
+/dist/
+/build/
+/eggs/
+/*.egg-info/
+/sdist/
+/wheel/
+/pip-wheel-metadata/
+/share/python-wheels/
+/*.egg
+/parts/
+/bin/
+/include/
+/lib/
+/lib64/
+/local/
+/man/
+/pip-selfcheck.json
+/lib/python*/
+
+# Установщики
+*.manifest
+*.spec
+
+# Кэш PyInstaller
+/pyinstaller/
+/pyinstaller-build/
+
+# Векторные базы данных ChromaDB
+*_vectordb/
+
+# Кэш моделей Sentence Transformers (на всякий случай)
+.cache/
+
+# Игнорировать папку с ONNX-моделью
+onnx_model/
+
+# Tree-sitter source grammars (we only store the compiled library)
+grammars/
+
+# Compiled tree-sitter library (if accidentally placed in root)
+languages.so
+languages.dll
+languages.dylib
+
+# Temp files
+*.tmp
+*.bak
+
+hooks/
+build_nuitka/
+
+nuitka-crash-report.xml
