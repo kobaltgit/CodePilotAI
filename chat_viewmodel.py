@@ -112,7 +112,7 @@ class ChatViewModel(QObject):
 
         # Анализ
         self._model.analysisStarted.connect(self._on_analysis_started)
-        self._model.analysisProgressUpdated.connect(self.statusMessageChanged) # Напрямую в статус-бар
+        self._model.analysisProgressUpdated.connect(self._on_analysis_progress_updated) # Подключаем к новому слоту
         self._model.analysisFinished.connect(self._on_analysis_finished)
         self._model.analysisError.connect(self._on_analysis_error)
 
@@ -186,10 +186,12 @@ class ChatViewModel(QObject):
     # --- Свойства состояния кнопок ---
     @Property(bool, notify=canSendChanged)
     def canSend(self) -> bool:
-        return (self._is_chat_view_ready and
-                self._model._gemini_api_key_loaded and
-                not self._is_request_running and
-                not self._is_analysis_running)
+        # Чат активен, если ChatView готов, API ключ загружен, и нет активного запроса.
+        # Проектный контекст не обязателен для базового чата.
+        return bool(self._is_chat_view_ready and
+                    self._model._gemini_api_key_loaded and
+                    not self._is_request_running and
+                    not self._is_analysis_running)
 
     @Property(bool, notify=canCancelRequestChanged)
     def canCancelRequest(self) -> bool: return self._is_request_running
@@ -370,11 +372,17 @@ class ChatViewModel(QObject):
         self._is_analysis_running = True
         self._update_all_button_states()
 
+    @Slot(int, int, str) # <--- Убедитесь, что этот слот находится здесь
+    def _on_analysis_progress_updated(self, processed: int, total: int, file_path: str):
+        """Обрабатывает обновление прогресса анализа и форматирует его для статус-бара."""
+        progress_text = self.tr("Анализ: {0}/{1} ({2})").format(processed, total, os.path.basename(file_path))
+        self.statusMessageChanged.emit(progress_text, 0) # 0 означает, что сообщение не исчезнет автоматически
+
     @Slot()
-    def _on_analysis_finished(self):
+    def _on_analysis_finished(self): # <--- Следующий метод в классе
         self._is_analysis_running = False
         self._update_all_button_states()
-        self.chatUpdateRequired.emit()
+        self.chatUpdateRequired.emit()   
 
     @Slot(str)
     def _on_analysis_error(self, error_message: str):
