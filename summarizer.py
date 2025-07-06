@@ -1,6 +1,7 @@
 # --- Файл: summarizer.py ---
 
 import os
+import sys
 import logging
 from typing import Dict, Optional, List, Any
 
@@ -9,16 +10,13 @@ from PySide6.QtCore import QObject, Signal, Slot
 import google.generativeai as genai
 from google.api_core import exceptions as google_exceptions
 
-from github_manager import GitHubManager
-from github.Repository import Repository
-
-# --- НОВЫЕ ИМПОРТЫ ---
+# Импортируем наши сплиттеры
 from code_splitter import TreeSitterSplitter, RecursiveCharacterSplitter
 
 # Настраиваем логгер для этого модуля
 logger = logging.getLogger(__name__)
 
-# Промпт для создания саммари файла. Теперь в двух версиях.
+# Промпт для создания саммари файла (остается без изменений)
 SUMMARIZATION_PROMPT_RU = """
 Проанализируй содержимое этого файла:
 
@@ -52,72 +50,69 @@ The response should be only the summary text, without any extra phrases or intro
 """
 
 
-# --- СТАРЫЙ КЛАСС SimpleTextSplitter УДАЛЕН ---
-
-
-# --- ПЕРЕРАБОТАННЫЙ WORKER ---
 class SummarizerWorker(QObject):
     """
-    Рабочий поток, который выполняет анализ файлов репозитория:
-    1. Создает саммари с помощью Gemini.
-    2. Разбивает содержимое файла на чанки с помощью подходящего сплиттера.
-    3. Отправляет готовые документы и метаданные для добавления в векторную БД.
+    Рабочий поток, который выполняет анализ контента файлов.
+    Может работать в двух режимах:
+    1. RAG-режим (rag_enabled=True): разбивает файлы на чанки и создает саммари.
+    2. Режим полных файлов (rag_enabled=False): обрабатывает файлы целиком.
     """
     # Сигналы
-    progress_updated = Signal(int, int)
+    progress_updated = Signal(int, int, str)
+    # Сигнал для обновления UI в реальном времени (окно саммари)
     file_summarized = Signal(str, str)
-    documents_for_db_ready = Signal(list, list)
+    # Сигнал с готовым пакетом данных для записи в БД
+    context_data_ready = Signal(list)
     error_occurred = Signal(str)
     finished = Signal()
 
     def __init__(self,
-                 github_manager: GitHubManager,
-                 repo: Repository,
-                 branch_name: str,
-                 files_to_summarize: Dict[str, int],
+                 files_content: Dict[str, str],
+                 rag_enabled: bool,
                  gemini_api_key: str,
                  model_name: str,
                  app_lang: str = 'en',
                  parent: Optional[QObject] = None):
         super().__init__(parent)
-        self.github_manager = github_manager
-        self.repo = repo
-        self.branch_name = branch_name
-        self.files_to_summarize = files_to_summarize
+        self.files_content = files_content
+        self.rag_enabled = rag_enabled
         self.gemini_api_key = gemini_api_key
         self.model_name = model_name
         self._is_cancelled = False
         self.generative_model: Optional[genai.GenerativeModel] = None
-        
-        # --- НОВАЯ ЛОГИКА ИНИЦИАЛИЗАЦИИ СПЛИТТЕРОВ ---
+
         self.ts_splitter: Optional[TreeSitterSplitter] = None
         self.fallback_splitter = RecursiveCharacterSplitter(chunk_size=1000, chunk_overlap=150)
-        
-        # Выбираем шаблон промпта в зависимости от переданного app_lang
-        if app_lang == 'ru':
-            self.summarization_prompt_template = SUMMARIZATION_PROMPT_RU
-        else:
-            self.summarization_prompt_template = SUMMARIZATION_PROMPT_EN
-            
+
+        # Выбираем шаблон промпта в зависимости от языка
+        self.summarization_prompt_template = SUMMARIZATION_PROMPT_RU if app_lang == 'ru' else SUMMARIZATION_PROMPT_EN
+
         self._initialize_tree_sitter()
 
     def _initialize_tree_sitter(self):
         """Пытается инициализировать TreeSitterSplitter."""
         try:
-            # Определяем путь к скомпилированной библиотеке
-            if getattr(sys, 'frozen', False): # Для скомпилированного приложения
+            if getattr(sys, 'frozen', False):
                 base_path = os.path.dirname(sys.executable)
-            else: # Для режима разработки
+            else:
                 base_path = os.path.dirname(os.path.abspath(__file__))
+
+            system = sys.platform
+            if system == 'win32':
+                lib_name = 'languages.dll'
+            elif system == 'darwin':
+                lib_name = 'languages.dylib'
+            else:
+                lib_name = 'languages.so'
             
-            lib_name = "languages.dll" if os.name == 'nt' else "languages.so"
             lib_path = os.path.join(base_path, 'resources', 'grammars', lib_name)
-            
+
             if os.path.exists(lib_path):
                 self.ts_splitter = TreeSitterSplitter(lib_path)
                 logger.info("Tree-sitter сплиттер успешно инициализирован.")
             else:
                 logger.warning(f"Скомпилированная библиотека грамматик не найдена по пути '{lib_path}'. Будет использоваться только рекурсивный сплиттер.")
+                self.ts_splitter = None
         except Exception as e:
             logger.error(f"Ошибка при инициализации TreeSitterSplitter: {e}. Будет использоваться только рекурсивный сплиттер.")
             self.ts_splitter = None
@@ -130,92 +125,82 @@ class SummarizerWorker(QObject):
     @Slot()
     def run(self):
         """Основной метод потока, выполняющий анализ."""
-        logger.info(self.tr("Запуск потока анализа для {0} файлов.").format(len(self.files_to_summarize)))
-        
+        logger.info(self.tr("Запуск потока анализа для {0} файлов. Режим RAG: {1}").format(len(self.files_content), self.rag_enabled))
+
         try:
-            try:
-                genai.configure(api_key=self.gemini_api_key)
-                self.generative_model = genai.GenerativeModel(self.model_name)
-            except Exception as e:
-                error_msg = self.tr("Ошибка инициализации модели Gemini в SummarizerWorker: {0}").format(e)
-                logger.error(error_msg)
-                self.error_occurred.emit(error_msg)
-                return
+            # Инициализация модели Gemini нужна только для RAG режима
+            if self.rag_enabled:
+                try:
+                    genai.configure(api_key=self.gemini_api_key)
+                    self.generative_model = genai.GenerativeModel(self.model_name)
+                except Exception as e:
+                    error_msg = self.tr("Ошибка инициализации модели Gemini: {0}").format(e)
+                    logger.error(error_msg)
+                    self.error_occurred.emit(error_msg)
+                    return
 
             processed_count = 0
-            total_count = len(self.files_to_summarize)
-            
-            for file_path in self.files_to_summarize.keys():
+            total_count = len(self.files_content)
+
+            for file_path, content in self.files_content.items():
                 if self._is_cancelled:
                     logger.warning(self.tr("Операция анализа была отменена пользователем."))
                     break
 
                 logger.debug(f"Анализ файла: {file_path}")
+                self.progress_updated.emit(processed_count, total_count, file_path)
                 
-                content = self.github_manager.get_file_content(self.repo, file_path, self.branch_name)
-                
-                if content is None:
-                    logger.warning(self.tr("Пропуск анализа для файла '{0}', так как не удалось получить его содержимое.").format(file_path))
-                    processed_count += 1
-                    self.progress_updated.emit(processed_count, total_count)
-                    continue
+                context_for_this_file = []
 
-                documents_to_add = []
-                metadatas_to_add = []
+                if self.rag_enabled:
+                    # --- Логика для режима RAG (чанки и саммари) ---
+                    # 1. Создание саммари
+                    summary_text = self.tr("(Файл пуст)")
+                    if content.strip() and self.generative_model:
+                        prompt = self.summarization_prompt_template.format(file_path=file_path, file_content=content)
+                        try:
+                            response = self.generative_model.generate_content(prompt, request_options={"timeout": 180})
+                            summary_text = response.text.strip()
+                            logger.info(self.tr("Успешно создано саммари для '{0}'.").format(file_path))
+                        except google_exceptions.ResourceExhausted as e:
+                            error_msg = self.tr("Исчерпаны квоты API Gemini. Прерывание. Ошибка: {0}").format(e)
+                            self.error_occurred.emit(error_msg)
+                            break
+                        except Exception as e:
+                            summary_text = self.tr("(Ошибка саммаризации: {0})").format(type(e).__name__)
+                            self.error_occurred.emit(self.tr("Ошибка саммаризации для '{0}', файл пропущен в саммари.").format(file_path))
 
-                # 1. Создание саммари (логика осталась прежней)
-                summary_text = self.tr("(Файл пуст)")
-                if content.strip():
-                    prompt = self.summarization_prompt_template.format(file_path=file_path, file_content=content)
-                    try:
-                        response = self.generative_model.generate_content(prompt, request_options={"timeout": 180})
-                        summary_text = response.text.strip()
-                        logger.info(self.tr("Успешно создано саммари для '{0}'.").format(file_path))
-                    except google_exceptions.ResourceExhausted as e:
-                        error_msg = self.tr("Исчерпаны квоты API Gemini при саммаризации '{0}'. Прерывание. Ошибка: {1}").format(file_path, e)
-                        logger.error(error_msg)
-                        self.error_occurred.emit(error_msg)
-                        break 
-                    except Exception as e:
-                        summary_text = self.tr("(Ошибка саммаризации: {0})").format(type(e).__name__)
-                        error_msg = self.tr("Ошибка API Gemini при саммаризации файла '{0}': {1} - {2}").format(file_path, type(e).__name__, e)
-                        logger.error(error_msg)
-                        self.error_occurred.emit(self.tr("Ошибка саммаризации для '{0}', файл пропущен в саммари.").format(file_path))
-                
-                self.file_summarized.emit(file_path, summary_text)
-                documents_to_add.append(summary_text)
-                metadatas_to_add.append({'file_path': file_path, 'type': 'summary'})
-                
-                # 2. Разбиение на чанки (НОВАЯ ЛОГИКА)
-                if content.strip():
-                    _, file_extension = os.path.splitext(file_path)
-                    language = TreeSitterSplitter.LANGUAGE_MAP.get(file_extension.lower())
-                    
-                    chunks = []
-                    # Используем TreeSitterSplitter, если он доступен и язык поддерживается
-                    if self.ts_splitter and language and self.ts_splitter.is_language_supported(language):
-                        logger.debug(f"Использование Tree-sitter сплиттера для языка '{language}'...")
-                        chunks = self.ts_splitter.split_text(content, language)
-                    # В противном случае используем рекурсивный сплиттер
-                    else:
-                        logger.debug(f"Использование рекурсивного сплиттера для файла '{file_path}'...")
-                        chunks = self.fallback_splitter.split_text(content)
+                    self.file_summarized.emit(file_path, summary_text)
+                    context_for_this_file.append({'file_path': file_path, 'type': 'summary', 'chunk_num': 0, 'content': summary_text})
 
-                    logger.debug(f"Файл '{file_path}' разбит на {len(chunks)} чанков.")
-                    for i, chunk_text in enumerate(chunks):
-                        documents_to_add.append(chunk_text)
-                        metadatas_to_add.append({'file_path': file_path, 'type': 'chunk', 'chunk_num': i + 1})
+                    # 2. Разбиение на чанки
+                    if content.strip():
+                        _, file_extension = os.path.splitext(file_path)
+                        language = TreeSitterSplitter.LANGUAGE_MAP.get(file_extension.lower())
 
-                # 3. Отправка данных в БД
-                if documents_to_add:
-                    self.documents_for_db_ready.emit(documents_to_add, metadatas_to_add)
+                        chunks = []
+                        if self.ts_splitter and language and self.ts_splitter.is_language_supported(language):
+                            chunks = self.ts_splitter.split_text(content, language)
+                        else:
+                            chunks = self.fallback_splitter.split_text(content)
+
+                        for i, chunk_text in enumerate(chunks):
+                            context_for_this_file.append({'file_path': file_path, 'type': 'chunk', 'chunk_num': i + 1, 'content': chunk_text})
+
+                else:
+                    # --- Логика для режима полных файлов (RAG выключен) ---
+                    context_for_this_file.append({'file_path': file_path, 'type': 'full_file', 'chunk_num': 0, 'content': content})
+                    # Для совместимости с окном саммари, отправим "саммари-заглушку"
+                    self.file_summarized.emit(file_path, self.tr("(Режим RAG отключен, файл используется целиком)"))
+
+                # Отправляем готовый пакет данных для этого файла
+                if context_for_this_file:
+                    self.context_data_ready.emit(context_for_this_file)
 
                 processed_count += 1
-                self.progress_updated.emit(processed_count, total_count)
-        
+                
+            self.progress_updated.emit(total_count, total_count, self.tr("Завершено"))
+
         finally:
             logger.info(self.tr("Поток анализа завершил свою работу."))
             self.finished.emit()
-
-# --- Добавляем sys в импорты, если его еще нет в файле ---
-import sys
