@@ -2,6 +2,29 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="en_US">
 <context>
+    <name>AboutDialog</name>
+    <message>
+        <location filename="../main.py" line="90"/>
+        <source>О программе {0}</source>
+        <translation>About {0}</translation>
+    </message>
+    <message>
+        <location filename="../main.py" line="112"/>
+        <source>Универсальный ИИ-ассистент для анализа и работы с кодовой базой, использующий модели Google Gemini.</source>
+        <translation>Universal AI assistant for code analysis and interaction, using Google Gemini models.</translation>
+    </message>
+    <message>
+        <location filename="../main.py" line="121"/>
+        <source>Автор: {0} | Лицензия: MIT</source>
+        <translation>Author: {0} | License: MIT</translation>
+    </message>
+    <message>
+        <location filename="../main.py" line="126"/>
+        <source>Закрыть</source>
+        <translation>Close</translation>
+    </message>
+</context>
+<context>
     <name>ChatModel</name>
     <message>
         <location filename="../chat_model.py" line="237"/>
@@ -38,13 +61,13 @@
     </message>
     <message>
         <location filename="../chat_model.py" line="293"/>
-        <source>Выбранная модель '{0}' недоступна. Установлена первая доступная: '{1}'.</source>
-        <translation>Selected model '{0}' is unavailable. First available model set: '{1}'.</translation>
+        <source>Выбранная модель &apos;{0}&apos; недоступна. Установлена первая доступная: &apos;{1}&apos;.</source>
+        <translation>Selected model &apos;{0}&apos; is unavailable. First available model set: &apos;{1}&apos;.</translation>
     </message>
     <message>
         <location filename="../chat_model.py" line="294"/>
-        <source>Модель '{0}' недоступна. Установлена: '{1}'.</source>
-        <translation>Model '{0}' is unavailable. Set: '{1}'.</translation>
+        <source>Модель &apos;{0}&apos; недоступна. Установлена: &apos;{1}&apos;.</source>
+        <translation>Model &apos;{0}&apos; is unavailable. Set: &apos;{1}&apos;.</translation>
     </message>
     <message>
         <location filename="../chat_model.py" line="296"/>
@@ -172,7 +195,7 @@
     <message>
         <location filename="../chat_model.py" line="582"/>
         <source>OK. Я готов к работе.</source>
-        <translation>OK. I'm ready to work.</translation>
+        <translation>OK. I&apos;m ready to work.</translation>
     </message>
     <message>
         <location filename="../chat_model.py" line="584"/>
@@ -262,43 +285,75 @@
         <translation>Final token counting error for cleaned prompt: {0}. Using rough estimate.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="710"/>
-        <source>Ты — мой ассистент по программированию. Анализируй предоставленный контекст и отвечай на вопросы. Отвечай {0}, если не указано иное. При ответе всегда используй Pygments для подсветки кода. </source>
-        <translation>You are my programming assistant. Analyze the provided context and answer questions. Answer {0} unless otherwise specified. Always use Pygments for code highlighting in your answers. </translation>
+        <location filename="../chat_model.py" line="717"/>
+        <source>Ты — мой ассистент по программированию. Анализируй предоставленный контекст и отвечай на вопросы. Отвечай {0}, если не указано иное. При ответе всегда используй Pygments для подсветки кода.</source>
+        <translation>You are my programming assistant. Analyze the provided context and answer questions. Answer {0} unless otherwise specified. Always use Pygments for code highlighting in your answers.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="738"/>
+        <location filename="../chat_model.py" line="723"/>
+        <source>Ты — полезный и разносторонний ассистент. Отвечай на вопросы четко и по делу. Отвечай {0}, если не указано иное.</source>
+        <translation>You are a helpful and versatile assistant. Answer questions clearly and to the point. Answer {0} unless otherwise specified.</translation>
+    </message>
+    <message>
+        <location filename="../chat_model.py" line="728"/>
+        <source>Дополнительные инструкции:</source>
+        <translation>Additional instructions:</translation>
+    </message>
+    <message>
+        <location filename="../chat_model.py" line="754"/>
         <source>--- Обзор файла: {0} ---
-        </source>
-                <translation>--- File overview: {0} ---
-        </translation>
-            </message>
-            <message>
-                <location filename="../chat_model.py" line="741"/>
-                <source>--- Фрагмент ({0}) из файла: {1} ---
-        </source>
-                <translation>--- Fragment ({0}) from file: {1} ---
-        </translation>
-            </message>
-            <message>
-                <location filename="../chat_model.py" line="748"/>
-                <source>--- Содержимое файла: {0} ---
-        </source>
-                <translation>--- File content: {0} ---
-        </translation>
+</source>
+        <translation>--- File overview: {0} ---
+</translation>
     </message>
     <message>
         <location filename="../chat_model.py" line="757"/>
+        <source>--- Фрагмент ({0}) из файла: {1} ---
+</source>
+        <translation>--- Fragment ({0}) from file: {1} ---
+</translation>
+    </message>
+    <message>
+        <location filename="../chat_model.py" line="764"/>
+        <source>--- Содержимое файла: {0} ---
+</source>
+        <translation>--- File content: {0} ---
+</translation>
+    </message>
+    <message>
+        <source>Ты — мой ассистент по программированию. Анализируй предоставленный контекст и отвечай на вопросы. Отвечай {0}, если не указано иное. При ответе всегда используй Pygments для подсветки кода. </source>
+        <translation type="vanished">You are my programming assistant. Analyze the provided context and answer questions. Answer {0} unless otherwise specified. Always use Pygments for code highlighting in your answers. </translation>
+    </message>
+    <message>
+        <source>--- Обзор файла: {0} ---
+        </source>
+        <translation type="vanished">--- File overview: {0} ---
+        </translation>
+    </message>
+    <message>
+        <source>--- Фрагмент ({0}) из файла: {1} ---
+        </source>
+        <translation type="vanished">--- Fragment ({0}) from file: {1} ---
+        </translation>
+    </message>
+    <message>
+        <source>--- Содержимое файла: {0} ---
+        </source>
+        <translation type="vanished">--- File content: {0} ---
+        </translation>
+    </message>
+    <message>
+        <location filename="../chat_model.py" line="773"/>
         <source>Часть контекста проекта не поместилась в окно токенов и была обрезана.</source>
         <translation>Part of the project context did not fit into the token window and was truncated.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="758"/>
+        <location filename="../chat_model.py" line="774"/>
         <source>Внимание: Контекст проекта был урезан, так как превышает лимит токенов.</source>
         <translation>Warning: Project context was truncated as it exceeds the token limit.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="797"/>
+        <location filename="../chat_model.py" line="813"/>
         <source>Не удалось получить репозиторий. Проверьте URL или токен GitHub.</source>
         <translation>Failed to retrieve repository. Check URL or GitHub token.</translation>
     </message>
@@ -435,7 +490,7 @@
 </translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="706"/>
+        <location filename="../chat_model.py" line="708"/>
         <source>на русском языке</source>
         <translation>in Russian</translation>
     </message>
@@ -564,7 +619,7 @@ Now, please answer my original question using this new information.
       </translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="787"/>
+        <location filename="../chat_model.py" line="803"/>
         <source>GitHub не инициализирован.</source>
         <translation>GitHub is not initialized.</translation>
     </message>
@@ -585,12 +640,12 @@ Now, please answer my original question using this new information.
         <translation type="vanished">Branch selected: {0}. Re-analysis is required.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="854"/>
+        <location filename="../chat_model.py" line="870"/>
         <source>Новая сессия создана.</source>
         <translation>New session created.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="859"/>
+        <location filename="../chat_model.py" line="875"/>
         <source>Не удалось загрузить сессию: {0}</source>
         <translation>Failed to load session: {0}</translation>
     </message>
@@ -603,17 +658,17 @@ Now, please answer my original question using this new information.
         <translation type="vanished">Warning: Failed to access repository &apos;{0}&apos;.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="895"/>
+        <location filename="../chat_model.py" line="911"/>
         <source>Сессия &apos;{0}&apos; загружена.</source>
         <translation>Session &apos;{0}&apos; loaded.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="913"/>
+        <location filename="../chat_model.py" line="929"/>
         <source>Сессия сохранена.</source>
         <translation>Session saved.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="915"/>
+        <location filename="../chat_model.py" line="931"/>
         <source>Не удалось сохранить сессию: {0}</source>
         <translation>Failed to save session: {0}</translation>
     </message>
@@ -920,17 +975,21 @@ Your tasks:
         <translation type="vanished">Help - GitGemini Pro</translation>
     </message>
     <message>
-        <location filename="../main.py" line="53"/>
+        <location filename="../main.py" line="58"/>
         <source>Справка - {0}</source>
         <translation>Help - {0}</translation>
     </message>
     <message>
-        <location filename="../main.py" line="71"/>
-        <source>&lt;html&gt;&lt;body&gt;&lt;h1&gt;Ошибка&lt;/h1&gt;&lt;p&gt;Файл справки &apos;help_content.html&apos; не найден.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;body&gt;&lt;h1&gt;Error&lt;/h1&gt;&lt;p&gt;Help file &apos;help_content.html&apos; not found.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <location filename="../main.py" line="78"/>
+        <source>&lt;html&gt;&lt;body&gt;&lt;h1&gt;Ошибка&lt;/h1&gt;&lt;p&gt;Файл справки не найден.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation>&lt;html&gt;&lt;body&gt;&lt;h1&gt;Error&lt;/h1&gt;&lt;p&gt;Help file not found.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../main.py" line="73"/>
+        <source>&lt;html&gt;&lt;body&gt;&lt;h1&gt;Ошибка&lt;/h1&gt;&lt;p&gt;Файл справки &apos;help_content.html&apos; не найден.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="vanished">&lt;html&gt;&lt;body&gt;&lt;h1&gt;Error&lt;/h1&gt;&lt;p&gt;Help file &apos;help_content.html&apos; not found.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+    </message>
+    <message>
+        <location filename="../main.py" line="80"/>
         <source>Закрыть</source>
         <translation>Close</translation>
     </message>
@@ -1040,17 +1099,17 @@ Your tasks:
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../main.py" line="96"/>
+        <location filename="../main.py" line="169"/>
         <source>Токены: ...</source>
         <translation>Tokens: ...</translation>
     </message>
     <message>
-        <location filename="../main.py" line="123"/>
+        <location filename="../main.py" line="196"/>
         <source>(Пользовательские инструкции)</source>
         <translation>(Custom Instructions)</translation>
     </message>
     <message>
-        <location filename="../main.py" line="124"/>
+        <location filename="../main.py" line="197"/>
         <source>Сохранить текущие как шаблон...</source>
         <translation>Save current as template...</translation>
     </message>
@@ -1059,7 +1118,7 @@ Your tasks:
         <translation type="vanished">GitGemini Pro</translation>
     </message>
     <message>
-        <location filename="../main.py" line="171"/>
+        <location filename="../main.py" line="244"/>
         <source>URL Репозитория:</source>
         <translation>Repository URL:</translation>
     </message>
@@ -1068,7 +1127,7 @@ Your tasks:
         <translation type="vanished">https://github.com/user/repository</translation>
     </message>
     <message>
-        <location filename="../main.py" line="174"/>
+        <location filename="../main.py" line="247"/>
         <source>Ветка:</source>
         <translation>Branch:</translation>
     </message>
@@ -1081,7 +1140,7 @@ Your tasks:
         <translation type="vanished">Analyze Repository</translation>
     </message>
     <message>
-        <location filename="../main.py" line="197"/>
+        <location filename="../main.py" line="270"/>
         <source>Отмена анализа</source>
         <translation>Cancel Analysis</translation>
     </message>
@@ -1090,13 +1149,13 @@ Your tasks:
         <translation type="vanished">View analyzed files and their summaries</translation>
     </message>
     <message>
-        <location filename="../main.py" line="210"/>
-        <location filename="../main.py" line="564"/>
+        <location filename="../main.py" line="283"/>
+        <location filename="../main.py" line="650"/>
         <source>Развернуть настройки ▼</source>
         <translation>Expand Settings ▼</translation>
     </message>
     <message>
-        <location filename="../main.py" line="213"/>
+        <location filename="../main.py" line="286"/>
         <source>Настройки</source>
         <translation>Settings</translation>
     </message>
@@ -1125,7 +1184,7 @@ Your tasks:
         <translation type="vanished">Save Token</translation>
     </message>
     <message>
-        <location filename="../main.py" line="233"/>
+        <location filename="../main.py" line="306"/>
         <source>Модель ИИ:</source>
         <translation>AI Model:</translation>
     </message>
@@ -1134,17 +1193,17 @@ Your tasks:
         <translation type="vanished">Select a Gemini model or enter a name manually</translation>
     </message>
     <message>
-        <location filename="../main.py" line="235"/>
+        <location filename="../main.py" line="308"/>
         <source>Макс. токенов ответа:</source>
         <translation>Max Response Tokens:</translation>
     </message>
     <message>
-        <location filename="../main.py" line="245"/>
+        <location filename="../main.py" line="318"/>
         <source>Расширения файлов для анализа:</source>
         <translation>File Extensions to Analyze:</translation>
     </message>
     <message>
-        <location filename="../main.py" line="253"/>
+        <location filename="../main.py" line="326"/>
         <source>Другие:</source>
         <translation>Other:</translation>
     </message>
@@ -1153,8 +1212,8 @@ Your tasks:
         <translation type="vanished">.log .csv .xml ...</translation>
     </message>
     <message>
-        <location filename="../main.py" line="262"/>
-        <location filename="../main.py" line="566"/>
+        <location filename="../main.py" line="335"/>
+        <location filename="../main.py" line="652"/>
         <source>Свернуть инструкции ▲</source>
         <translation>Collapse Instructions ▲</translation>
     </message>
@@ -1163,12 +1222,12 @@ Your tasks:
         <translation type="vanished">System Instructions (optional)...</translation>
     </message>
     <message>
-        <location filename="../main.py" line="269"/>
+        <location filename="../main.py" line="342"/>
         <source>Шаблон:</source>
         <translation>Template:</translation>
     </message>
     <message>
-        <location filename="../main.py" line="269"/>
+        <location filename="../main.py" line="342"/>
         <source>Управлять...</source>
         <translation>Manage...</translation>
     </message>
@@ -1177,47 +1236,47 @@ Your tasks:
         <translation type="vanished">Enter your query (Enter for new line, Ctrl+Enter to send)...</translation>
     </message>
     <message>
-        <location filename="../main.py" line="298"/>
+        <location filename="../main.py" line="371"/>
         <source>Отмена</source>
         <translation>Cancel</translation>
     </message>
     <message>
-        <location filename="../main.py" line="299"/>
+        <location filename="../main.py" line="372"/>
         <source>Отправить Ctrl ↵</source>
         <translation>Send Ctrl ↵</translation>
     </message>
     <message>
-        <location filename="../main.py" line="312"/>
+        <location filename="../main.py" line="385"/>
         <source>&amp;Файл</source>
         <translation>&amp;File</translation>
     </message>
     <message>
-        <location filename="../main.py" line="314"/>
+        <location filename="../main.py" line="387"/>
         <source>&amp;Новая сессия</source>
         <translation>&amp;New Session</translation>
     </message>
     <message>
-        <location filename="../main.py" line="315"/>
+        <location filename="../main.py" line="388"/>
         <source>&amp;Открыть сессию...</source>
         <translation>&amp;Open Session...</translation>
     </message>
     <message>
-        <location filename="../main.py" line="316"/>
+        <location filename="../main.py" line="389"/>
         <source>&amp;Сохранить сессию</source>
         <translation>&amp;Save Session</translation>
     </message>
     <message>
-        <location filename="../main.py" line="317"/>
+        <location filename="../main.py" line="390"/>
         <source>Сохранить сессию &amp;как...</source>
         <translation>Save Session &amp;As...</translation>
     </message>
     <message>
-        <location filename="../main.py" line="321"/>
+        <location filename="../main.py" line="394"/>
         <source>&amp;Выход</source>
         <translation>&amp;Exit</translation>
     </message>
     <message>
-        <location filename="../main.py" line="338"/>
+        <location filename="../main.py" line="411"/>
         <source>&amp;Справка</source>
         <translation>&amp;Help</translation>
     </message>
@@ -1226,193 +1285,191 @@ Your tasks:
         <translation type="vanished">Help Contents...</translation>
     </message>
     <message>
-        <location filename="../main.py" line="340"/>
+        <location filename="../main.py" line="413"/>
         <source>О программе...</source>
         <translation>About...</translation>
     </message>
     <message>
-        <location filename="../main.py" line="334"/>
+        <location filename="../main.py" line="407"/>
         <source>&amp;Вид</source>
         <translation>&amp;View</translation>
     </message>
     <message>
-        <location filename="../main.py" line="136"/>
-        <location filename="../main.py" line="750"/>
+        <location filename="../main.py" line="209"/>
+        <location filename="../main.py" line="850"/>
         <source>Свернуть панель проектов</source>
         <translation>Collapse Projects Panel</translation>
     </message>
     <message>
-        <location filename="../main.py" line="148"/>
+        <location filename="../main.py" line="221"/>
         <source>&lt;b&gt;Недавние проекты&lt;/b&gt;</source>
         <translation>&lt;b&gt;Recent Projects&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../main.py" line="150"/>
+        <location filename="../main.py" line="223"/>
         <source>Двойной клик для открытия сессии</source>
         <translation>Double click to open session</translation>
     </message>
     <message>
-        <location filename="../main.py" line="179"/>
-        <location filename="../main.py" line="477"/>
+        <location filename="../main.py" line="252"/>
+        <location filename="../main.py" line="563"/>
         <source>GitHub Репозиторий</source>
         <translation>GitHub Repository</translation>
     </message>
     <message>
-        <location filename="../main.py" line="185"/>
+        <location filename="../main.py" line="258"/>
         <source>Выбрать папку...</source>
         <translation>Select folder...</translation>
     </message>
     <message>
-        <location filename="../main.py" line="187"/>
+        <location filename="../main.py" line="260"/>
         <source>Путь к локальной папке проекта...</source>
         <translation>Path to local project folder...</translation>
     </message>
     <message>
-        <location filename="../main.py" line="192"/>
+        <location filename="../main.py" line="265"/>
         <source>Локальная папка</source>
         <translation>Local Folder</translation>
     </message>
     <message>
-        <location filename="../main.py" line="196"/>
+        <location filename="../main.py" line="269"/>
         <source>Анализировать</source>
         <translation>Analyze</translation>
     </message>
     <message>
-        <location filename="../main.py" line="199"/>
+        <location filename="../main.py" line="272"/>
         <source>Просмотреть проанализированные файлы</source>
         <translation>View analyzed files</translation>
     </message>
     <message>
-        <location filename="../main.py" line="220"/>
-        <location filename="../main.py" line="227"/>
+        <location filename="../main.py" line="293"/>
+        <location filename="../main.py" line="300"/>
         <source>Сохранить</source>
         <translation>Save</translation>
     </message>
     <message>
-        <location filename="../main.py" line="237"/>
+        <location filename="../main.py" line="310"/>
         <source>Исп. RAG (чанки)</source>
         <translation>Use RAG (chunks)</translation>
     </message>
     <message>
-        <location filename="../main.py" line="238"/>
+        <location filename="../main.py" line="311"/>
         <source>Если включено, файлы будут разбиваться на чанки и саммари.
 Если выключено, файлы будут использоваться целиком.</source>
         <translation>If enabled, files will be split into chunks and summaries.
 If disabled, files will be used in their entirety.</translation>
     </message>
     <message>
-        <location filename="../main.py" line="267"/>
+        <location filename="../main.py" line="340"/>
         <source>Системные инструкции...</source>
         <translation>System instructions...</translation>
     </message>
     <message>
-        <location filename="../main.py" line="279"/>
+        <location filename="../main.py" line="352"/>
         <source>Найти в диалоге...</source>
         <translation>Find in dialog...</translation>
     </message>
     <message>
-        <location filename="../main.py" line="280"/>
+        <location filename="../main.py" line="353"/>
         <source>Назад</source>
         <translation>Previous</translation>
     </message>
     <message>
-        <location filename="../main.py" line="282"/>
+        <location filename="../main.py" line="355"/>
         <source>Далее</source>
         <translation>Next</translation>
     </message>
     <message>
-        <location filename="../main.py" line="286"/>
+        <location filename="../main.py" line="359"/>
         <source>Сбросить поиск</source>
         <translation>Reset search</translation>
     </message>
     <message>
-        <location filename="../main.py" line="287"/>
+        <location filename="../main.py" line="360"/>
         <source>Поиск:</source>
         <translation>Search:</translation>
     </message>
     <message>
-        <location filename="../main.py" line="295"/>
+        <location filename="../main.py" line="368"/>
         <source>Введите запрос (Ctrl+Enter для отправки)...</source>
         <translation>Enter query (Ctrl+Enter to send)...</translation>
     </message>
     <message>
-        <location filename="../main.py" line="319"/>
+        <location filename="../main.py" line="392"/>
         <source>Очистить список недавних проектов</source>
         <translation>Clear recent projects list</translation>
     </message>
     <message>
-        <location filename="../main.py" line="335"/>
+        <location filename="../main.py" line="408"/>
         <source>Показать &amp;Логи</source>
         <translation>Show &amp;Logs</translation>
     </message>
     <message>
-        <location filename="../main.py" line="339"/>
+        <location filename="../main.py" line="412"/>
         <source>Содержание...</source>
         <translation>Contents...</translation>
     </message>
     <message>
-        <location filename="../main.py" line="345"/>
+        <location filename="../main.py" line="418"/>
         <source>&amp;Язык</source>
         <translation>&amp;Language</translation>
     </message>
     <message>
-        <location filename="../main.py" line="347"/>
+        <location filename="../main.py" line="422"/>
         <source>Русский</source>
         <translation>Russian</translation>
     </message>
     <message>
-        <location filename="../main.py" line="349"/>
+        <location filename="../main.py" line="428"/>
         <source>English</source>
         <translation>English</translation>
     </message>
     <message>
-        <location filename="../main.py" line="358"/>
+        <location filename="../main.py" line="444"/>
         <source>Смена языка</source>
         <translation>Change Language</translation>
     </message>
     <message>
-        <location filename="../main.py" line="358"/>
+        <location filename="../main.py" line="444"/>
         <source>Язык будет изменен после перезапуска приложения.</source>
         <translation>The language will be changed after the application restarts.</translation>
     </message>
     <message>
-        <location filename="../main.py" line="360"/>
+        <location filename="../main.py" line="446"/>
         <source>Ошибка сохранения</source>
         <translation>Save Error</translation>
     </message>
     <message>
-        <location filename="../main.py" line="360"/>
+        <location filename="../main.py" line="446"/>
         <source>Не удалось сохранить настройку языка: {0}</source>
         <translation>Failed to save language setting: {0}</translation>
     </message>
     <message>
-        <location filename="../main.py" line="505"/>
-        <source>открытием проекта '{0}'</source>
-        <translation>opening project '{0}'</translation>
+        <location filename="../main.py" line="591"/>
+        <source>открытием проекта &apos;{0}&apos;</source>
+        <translation>opening project &apos;{0}&apos;</translation>
     </message>
     <message>
-        <location filename="../main.py" line="597"/>
-        <location filename="../main.py" line="746"/>
+        <location filename="../main.py" line="683"/>
+        <location filename="../main.py" line="846"/>
         <source>Развернуть панель проектов</source>
         <translation>Expand Projects Panel</translation>
     </message>
     <message>
-        <location filename="../main.py" line="678"/>
         <source>О программе {0}</source>
-        <translation>About {0}</translation>
+        <translation type="vanished">About {0}</translation>
     </message>
     <message>
-        <location filename="../main.py" line="678"/>
         <source>&lt;b&gt;{0} v2.1&lt;/b&gt;&lt;br&gt;...</source>
-        <translation>&lt;b&gt;{0} v2.1&lt;/b&gt;&lt;br&gt;...</translation>
+        <translation type="vanished">&lt;b&gt;{0} v2.1&lt;/b&gt;&lt;br&gt;...</translation>
     </message>
     <message>
-        <location filename="../main.py" line="564"/>
+        <location filename="../main.py" line="650"/>
         <source>Свернуть настройки ▲</source>
         <translation>Collapse Settings ▲</translation>
     </message>
     <message>
-        <location filename="../main.py" line="566"/>
+        <location filename="../main.py" line="652"/>
         <source>Развернуть инструкции ▼</source>
         <translation>Expand Instructions ▼</translation>
     </message>
@@ -1473,17 +1530,17 @@ If disabled, files will be used in their entirety.</translation>
         <translation type="vanished">Template management component not loaded.</translation>
     </message>
     <message>
-        <location filename="../main.py" line="641"/>
+        <location filename="../main.py" line="727"/>
         <source>выходом из приложения</source>
         <translation>exiting the application</translation>
     </message>
     <message>
-        <location filename="../main.py" line="651"/>
+        <location filename="../main.py" line="737"/>
         <source>Несохраненные изменения</source>
         <translation>Unsaved Changes</translation>
     </message>
     <message>
-        <location filename="../main.py" line="651"/>
+        <location filename="../main.py" line="737"/>
         <source>Имеются несохраненные изменения.
 Сохранить их перед {0}?</source>
         <translation>There are unsaved changes.
