@@ -700,17 +700,33 @@ class ChatModel(QObject):
         self.tokenCountUpdated.emit(self._current_prompt_tokens, CONTEXT_WINDOW_LIMIT)
         return final_cleaned_messages_for_api # Возвращаем очищенный промпт
 
-
     def _build_system_instructions(self) -> str:
-        """Собирает текст системных инструкций."""
+        """
+        Собирает текст системных инструкций, адаптируя его под текущую задачу
+        (анализ проекта или общий чат).
+        """
         lang_instruction_phrase = self.tr("на русском языке") if self._app_language == 'ru' else "in English"
-        base_instructions = self.tr(
-            "Ты — мой ассистент по программированию. Анализируй предоставленный контекст и отвечай на вопросы. "
-            "Отвечай {0}, если не указано иное. При ответе всегда используй Pygments для подсветки кода. ") \
-            .format(lang_instruction_phrase)
-        
+        base_instructions = ""
+
+        # Выбираем базовый промпт в зависимости от наличия контекста проекта
+        if self._project_context:
+            # Промпт для режима анализа кода
+            base_instructions = self.tr(
+                "Ты — мой ассистент по программированию. Анализируй предоставленный контекст и отвечай на вопросы. "
+                "Отвечай {0}, если не указано иное. При ответе всегда используй Pygments для подсветки кода."
+            ).format(lang_instruction_phrase)
+        else:
+            # Промпт для режима общего чата
+            base_instructions = self.tr(
+                "Ты — полезный и разносторонний ассистент. Отвечай на вопросы четко и по делу. "
+                "Отвечай {0}, если не указано иное."
+            ).format(lang_instruction_phrase)
+
+        # Добавляем пользовательские инструкции, если они есть
         if self._instructions.strip():
-            return f"{base_instructions}\n\nДополнительные инструкции:\n{self._instructions.strip()}"
+            user_instructions_header = self.tr("Дополнительные инструкции:")
+            return f"{base_instructions}\n\n{user_instructions_header}\n{self._instructions.strip()}"
+        
         return base_instructions
 
     def _build_context_string(self, remaining_budget_tokens: int) -> str:
