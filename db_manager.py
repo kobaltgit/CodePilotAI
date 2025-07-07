@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS context_data (
     type TEXT NOT NULL CHECK(type IN ('summary', 'chunk', 'full_file')), -- Тип контента
     chunk_num INTEGER, -- Порядковый номер чанка (для type='chunk')
     content TEXT NOT NULL
+    UNIQUE(file_path, type, chunk_num)
 );
 
 CREATE INDEX IF NOT EXISTS idx_messages_order ON messages (order_index);
@@ -138,7 +139,16 @@ def load_session_data(
 
             # Загружаем все данные из новой таблицы context_data
             context_cursor = conn.execute("SELECT file_path, type, chunk_num, content FROM context_data ORDER BY file_path, chunk_num ASC")
-            context_data_list = [dict(row) for row in context_cursor.fetchall()]
+            context_data_list = []
+            for row in context_cursor.fetchall():
+                item = dict(row)
+                # Ensure chunk_num is int for compatibility, even if DB stores it as float/text for some reason
+                if 'chunk_num' in item and item['chunk_num'] is not None:
+                    try:
+                        item['chunk_num'] = int(item['chunk_num'])
+                    except (ValueError, TypeError):
+                        item['chunk_num'] = 0 # Default if conversion fails
+                context_data_list.append(item)
 
         logger.info(f"Сессия загружена. Метаданные: {len(metadata)} полей, Сообщений: {len(messages_list)}, Элементов контекста: {len(context_data_list)}")
         return metadata, messages_list, context_data_list
@@ -216,15 +226,20 @@ def save_session_data(
                 # Сохранение контекста
                 cursor.execute("DELETE FROM context_data;")
                 # Готовим данные для вставки. Убедимся, что все ключи есть.
-                context_to_insert = [
-                    (
+                context_to_insert = []
+                for item in context_data_list:
+                    # Убедимся, что chunk_num корректно обрабатывается (None -> 0 для INTEGER NOT NULL)
+                    chunk_num_val = item.get("chunk_num")
+                    if chunk_num_val is None or not isinstance(chunk_num_val, int):
+                        chunk_num_val = 0 # Default to 0 for summary or if missing/invalid
+
+                    context_to_insert.append((
                         item.get("file_path"),
                         item.get("type"),
-                        item.get("chunk_num"),
+                        chunk_num_val,
                         item.get("content")
-                    )
-                    for item in context_data_list
-                ]
+                    ))
+
                 if context_to_insert:
                     cursor.executemany(
                         "INSERT INTO context_data (file_path, type, chunk_num, content) VALUES (?, ?, ?, ?)",

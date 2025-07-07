@@ -80,14 +80,15 @@ class SummariesWindow(QWidget):
         """
         logger.debug(f"SummariesWindow: получено обновление, {len(summaries)} саммари.")
         self._summaries_data = summaries
-        
+
         # Обновляем список, учитывая текущий фильтр поиска
         self._filter_list(self.search_line_edit.text())
 
         # Если выбранный элемент исчез после обновления, очищаем поле
         if self.file_list_view.selectionModel().hasSelection():
             selected_index = self.file_list_view.selectionModel().currentIndex()
-            file_path = self.list_model.data(selected_index, Qt.ItemDataRole.DisplayRole)
+            # Важно: получаем реальный file_path из UserRole, а не DisplayRole (который может быть изменен фильтром)
+            file_path = self.list_model.data(selected_index, Qt.ItemDataRole.UserRole)
             if file_path not in self._summaries_data:
                 self.summary_text_edit.clear()
         else:

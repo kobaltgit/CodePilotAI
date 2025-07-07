@@ -147,11 +147,12 @@ class TreeSitterSplitter:
         """Загружает все доступные языки из мастер-списка."""
         for lang_name in self.ALL_LANGUAGES:
             try:
-                lang_obj = Language(self.library_path, lang_name)
+                lang_obj = Language(self.library_path, name=lang_name) # <-- Изменено: добавлен 'name='
                 self.languages[lang_name] = lang_obj
                 logger.debug(f"Успешно загружена грамматика для '{lang_name}'")
             except Exception as e:
                 logger.warning(f"Не удалось загрузить грамматику для '{lang_name}': {e}. Файлы этого типа будут обрабатываться базовым текстовым сплиттером.")
+
     
     def is_language_supported(self, lang_name: str) -> bool:
         """Проверяет, поддерживается ли (успешно ли загружен) данный язык."""

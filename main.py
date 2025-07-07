@@ -408,8 +408,13 @@ class MainWindow(QMainWindow):
     def _show_summaries_window(self):
         if self.summaries_window is None:
             self.summaries_window = SummariesWindow(self)
+            # Подключаем сигнал для обновлений в реальном времени
             self.view_model.fileSummariesUpdated.connect(self.summaries_window.update_summaries)
-        self.summaries_window.update_summaries(self.view_model._model._file_summaries if hasattr(self.view_model._model, '_file_summaries') else {})
+
+        # Немедленно обновляем данными при показе, чтобы окно не было пустым,
+        # если анализ уже завершен.
+        self.summaries_window.update_summaries(self.view_model._model._file_summaries_for_display)
+
         self.summaries_window.show()
         self.summaries_window.activateWindow()
         

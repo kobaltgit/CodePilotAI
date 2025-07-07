@@ -192,6 +192,7 @@ class ChatModel(QObject):
         # Общие для всех типов проектов
         self._chat_history: List[Dict[str, Any]] = []
         self._project_context: List[Dict[str, Any]] = [] # Теперь хранит как саммари, так и чанки/полные файлы
+        self._file_summaries_for_display: Dict[str, str] = {} # <-- ДОБАВЛЕНО: Для отображения саммари
         self._current_session_filepath: Optional[str] = None
         self._is_dirty: bool = False
         # Специфичные для проекта
@@ -344,7 +345,21 @@ class ChatModel(QObject):
         self.analysisStarted.emit()
         self.statusMessage.emit(self.tr("Начат анализ {0} файлов...").format(len(files_content)), 0)
 
-        self._analysis_thread = QThread()
+                # 1. Очищаем старый контекст
+        self._clear_project_context()
+
+        # 2. Получаем контент файлов в зависимости от типа проекта
+        self.statusMessage.emit(self.tr("Сбор файлов для анализа..."), 0)
+        files_content = self._get_files_content_for_analysis()
+        if not files_content:
+            self.analysisError.emit(self.tr("Не найдено подходящих файлов для анализа в указанном источнике."))
+            return
+
+        # 3. Запускаем SummarizerWorker
+        self.analysisStarted.emit()
+        self.statusMessage.emit(self.tr("Начат анализ {0} файлов...").format(len(files_content)), 0)
+
+        # Создаем SummarizerWorker (который сам является QThread)
         self._analysis_worker = SummarizerWorker(
             files_content=files_content,
             rag_enabled=self._rag_enabled,
@@ -352,7 +367,6 @@ class ChatModel(QObject):
             model_name=self._model_name,
             app_lang=self._app_language
         )
-        self._analysis_worker.moveToThread(self._analysis_thread)
 
         # Подключение сигналов
         self._analysis_worker.context_data_ready.connect(self._on_context_data_ready)
@@ -360,13 +374,15 @@ class ChatModel(QObject):
         self._analysis_worker.progress_updated.connect(self.analysisProgressUpdated)
         self._analysis_worker.error_occurred.connect(self.analysisError)
         self._analysis_worker.finished.connect(self._on_analysis_finished)
+        # Подключаем обнуление ссылок к сигналу finished самого воркера
+        self._analysis_worker.finished.connect(lambda: setattr(self, '_analysis_worker', None)) # <-- Добавлено обнуление ссылки на воркер
+        self._analysis_worker.finished.connect(lambda: setattr(self, '_analysis_thread', None)) # <-- Добавлено обнуление ссылки на поток (которым он теперь является)
 
-        self._analysis_thread.started.connect(self._analysis_worker.run)
-        self._analysis_worker.finished.connect(self._analysis_thread.quit)
-        self._analysis_worker.finished.connect(self._analysis_worker.deleteLater)
-        self._analysis_thread.finished.connect(self._analysis_thread.deleteLater)
+        # Поскольку SummarizerWorker сам является QThread, он запускает себя.
+        # self._analysis_thread больше не нужен, его ссылка используется для удобства.
+        self._analysis_thread = self._analysis_worker # <-- Присваиваем ссылку на воркер, который теперь и есть поток.
+        self._analysis_thread.start() # Запускаем поток
 
-        self._analysis_thread.start()
 
     def _is_ready_for_analysis(self) -> Tuple[bool, str]:
         """Проверяет, все ли готово к запуску анализа."""
@@ -421,24 +437,21 @@ class ChatModel(QObject):
     @Slot(str, str)
     def _on_file_summarized(self, file_path: str, summary: str):
         """Обновляет словарь саммари для отображения в UI."""
-        # Этот метод нужен для окна SummariesWindow, которое показывает только саммари.
-        # Собираем их отдельно от общего _project_context
-        # Создаем временный словарь для текущего состояния, чтобы не мутировать _project_context напрямую
-        current_summaries = {}
-        for item in self._project_context:
-            if item['type'] == 'summary':
-                current_summaries[item['file_path']] = item['content']
-        current_summaries[file_path] = summary
-        self.fileSummariesChanged.emit(current_summaries)
+        self._file_summaries_for_display[file_path] = summary # <-- Напрямую добавляем в новый словарь
+        self.fileSummariesChanged.emit(self._file_summaries_for_display) # <-- Эмитируем весь словарь
+
 
     @Slot()
     def _on_analysis_finished(self):
         self.analysisFinished.emit()
         self.statusMessage.emit(self.tr("Анализ проекта завершен."), 5000)
         # После завершения анализа обновляем словарь саммари целиком
-        final_summaries = {item['file_path']: item['content'] for item in self._project_context if item['type'] == 'summary'}
-        self.fileSummariesChanged.emit(final_summaries)
+        # Используем уже собранный _file_summaries_for_display
+        self.fileSummariesChanged.emit(self._file_summaries_for_display)
 
+        # Обнуляем ссылки после завершения работы потока
+        self._analysis_worker = None
+        self._analysis_thread = None
 
     # --- RAG и основной запрос к API ---
     def send_request_to_api(self, user_input: str):
@@ -705,7 +718,7 @@ class ChatModel(QObject):
         Собирает строку контекста из self._project_context, не превышая бюджет токенов.
         Отдает приоритет саммари, затем чанкам, затем полным файлам.
         """
-        if not self._project_context or not self._gemini_model:
+        if not self._project_context or not self._gemini_api_key_loaded:
             return ""
         
         context_parts_list = []
@@ -824,8 +837,10 @@ class ChatModel(QObject):
     def _clear_project_context(self):
         """Очищает данные анализа."""
         self._project_context = []
+        self._file_summaries_for_display = {} # <-- Очищаем и новый словарь саммари
         self.fileSummariesChanged.emit({})
         self._mark_dirty()
+
 
     # --- Управление историей чата ---
     def add_user_message(self, text: str):
@@ -845,6 +860,7 @@ class ChatModel(QObject):
         self._repo_object, self._available_branches = None, []
         self._chat_history = []
         self._project_context = []
+        self._file_summaries_for_display = {} # <-- Очищаем при создании новой сессии
         self._current_session_filepath = None
         # Убедимся, что расширения устанавливаются корректно, без начальных точек
         self._extensions = tuple([".py", ".txt", ".md", ".json", ".html", ".css", ".js", ".yaml", ".yml", ".pdf", ".docx"])
@@ -853,7 +869,7 @@ class ChatModel(QObject):
         self._instructions = ""
         self._rag_enabled = True
         self._is_dirty = False
-        
+
         self.sessionLoaded.emit()
         self.statusMessage.emit(self.tr("Новая сессия создана."), 3000)
 
@@ -864,7 +880,7 @@ class ChatModel(QObject):
             return
 
         meta, msgs, context = loaded_data
-        
+
         # Загружаем всё из метаданных
         self._project_type = meta.get("project_type")
         self._repo_url = meta.get("repo_url")
@@ -877,11 +893,13 @@ class ChatModel(QObject):
         ext_str = meta.get("extensions", ".py .txt .md .json .html .css .js .yaml .yml .pdf .docx")
         self._extensions = tuple(p.strip() for p in re.split(r"[\s,]+", ext_str) if p.strip())
         self._instructions = meta.get("instructions", "")
-        
+
         # Загружаем историю и контекст
         self._chat_history = msgs
         self._project_context = context
-        
+        # Заполняем _file_summaries_for_display из загруженного контекста
+        self._file_summaries_for_display = {item['file_path']: item['content'] for item in self._project_context if item['type'] == 'summary'} # <-- Заполняем
+
         # Обновляем состояние сессии
         self._current_session_filepath = filepath
         self._is_dirty = False
@@ -892,9 +910,10 @@ class ChatModel(QObject):
             if repo_data:
                 self._repo_object, _ = repo_data
                 self._available_branches = self._github_manager.get_available_branches(self._repo_object)
-        
+
         self.sessionLoaded.emit()
         self.statusMessage.emit(self.tr("Сессия '{0}' загружена.").format(os.path.basename(filepath)), 5000)
+
 
     def save_session(self, filepath: Optional[str] = None) -> Tuple[bool, Optional[str]]:
         save_path = filepath or self._current_session_filepath

@@ -5,7 +5,7 @@ import sys
 import logging
 from typing import Dict, Optional, List, Any
 
-from PySide6.QtCore import QObject, Signal, Slot
+from PySide6.QtCore import QObject, Signal, Slot, QThread
 
 import google.generativeai as genai
 from google.api_core import exceptions as google_exceptions
@@ -50,12 +50,10 @@ The response should be only the summary text, without any extra phrases or intro
 """
 
 
-class SummarizerWorker(QObject):
+class SummarizerWorker(QThread): # <-- Изменено: наследование от QThread
     """
     Рабочий поток, который выполняет анализ контента файлов.
-    Может работать в двух режимах:
-    1. RAG-режим (rag_enabled=True): разбивает файлы на чанки и создает саммари.
-    2. Режим полных файлов (rag_enabled=False): обрабатывает файлы целиком.
+    ...
     """
     # Сигналы
     progress_updated = Signal(int, int, str)
@@ -72,8 +70,8 @@ class SummarizerWorker(QObject):
                  gemini_api_key: str,
                  model_name: str,
                  app_lang: str = 'en',
-                 parent: Optional[QObject] = None):
-        super().__init__(parent)
+                 parent: Optional[QObject] = None): # <-- parent теперь Optional[QObject], так как QThread не принимает QObject в __init__
+        super().__init__() # <-- Изменено: parent удален, т.к. QThread сам родитель
         self.files_content = files_content
         self.rag_enabled = rag_enabled
         self.gemini_api_key = gemini_api_key
@@ -88,6 +86,10 @@ class SummarizerWorker(QObject):
         self.summarization_prompt_template = SUMMARIZATION_PROMPT_RU if app_lang == 'ru' else SUMMARIZATION_PROMPT_EN
 
         self._initialize_tree_sitter()
+
+    # run() метод теперь не @Slot(), так как это метод QThread.
+    # Внутри run() инициализация model будет также как в GeminiWorker.
+
 
     def _initialize_tree_sitter(self):
         """Пытается инициализировать TreeSitterSplitter."""

@@ -379,7 +379,7 @@ class ChatViewModel(QObject):
         self.statusMessageChanged.emit(progress_text, 0) # 0 означает, что сообщение не исчезнет автоматически
 
     @Slot()
-    def _on_analysis_finished(self): # <--- Следующий метод в классе
+    def _on_analysis_finished(self):
         self._is_analysis_running = False
         self._update_all_button_states()
         self.chatUpdateRequired.emit()   
