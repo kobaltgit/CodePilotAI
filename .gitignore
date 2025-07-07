@@ -48,6 +48,7 @@ __pycache__/
 /man/
 /pip-selfcheck.json
 /lib/python*/
+/output/
 
 # Установщики
 *.manifest
