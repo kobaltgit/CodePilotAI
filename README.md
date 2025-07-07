@@ -5,9 +5,7 @@
 
 CodePilotAI позволяет вести диалог с языковой моделью Google Gemini, используя файлы вашего проекта (из GitHub или локальной папки) в качестве контекста. Приложение поддерживает несколько режимов работы, включая интеллектуальный анализ кода с помощью Tree-sitter и простое общение с ИИ.
 
-<a href="https://ibb.co/WNKyVgdv"><img src="https://i.ibb.co/6csPXgp0/Screenshot-16.png" alt="Screenshot-16" border="0"></a><br>
-<a href="https://ibb.co/DPwtbTfB"><img src="https://i.ibb.co/vCLHBR4N/Screenshot-17.png" alt="Screenshot-17" border="0"></a><br>
-<a href="https://ibb.co/gbLrs21s"><img src="https://i.ibb.co/dswfnT9n/Screenshot-18.png" alt="Screenshot-18" border="0"></a><br>
+<a href="https://ibb.co/Z6GmkCZ6"><img src="https://i.ibb.co/PZFQf8SZ/Screenshot-28.png" alt="Screenshot-28" border="0"></a>
 
 ## 🚀 Основные возможности
 

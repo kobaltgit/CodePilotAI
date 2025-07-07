@@ -1,4 +1,10 @@
 # --- Файл: main.py ---
+# --- Глобальные константы ---
+APP_NAME = "CodePilotAI"
+APP_VERSION = "1.0.0" # Пример версии
+AUTHOR_NAME = "kobaltGIT"
+GITHUB_URL = "https://github.com/kobaltgit/CodePilotAI"
+APP_ICON_FILENAME = "app_icon.png"
 
 import sys
 import os
@@ -74,6 +80,71 @@ class HelpDialog(QDialog):
         close_button.clicked.connect(self.accept)
         layout.addWidget(close_button, 0, Qt.AlignmentFlag.AlignRight)
         self.setLayout(layout)
+
+# --- Диалог "О программе" ---
+class AboutDialog(QDialog):
+    """Кастомное, информативное окно "О программе"."""
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle(self.tr("О программе {0}").format(APP_NAME))
+        self.setMinimumWidth(450)
+
+        # --- Иконка и заголовок ---
+        icon_path = self._get_resource_path(APP_ICON_FILENAME)
+        icon_label = QLabel()
+        if os.path.exists(icon_path):
+            pixmap = QIcon(icon_path).pixmap(64, 64)
+            icon_label.setPixmap(pixmap)
+
+        title_label = QLabel(f"<h3>{APP_NAME} v{APP_VERSION}</h3>")
+        title_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+
+        top_layout = QHBoxLayout()
+        top_layout.addWidget(icon_label, 0)
+        top_layout.addWidget(title_label, 1)
+
+        # --- Описание ---
+        description_text = self.tr(
+            "Универсальный ИИ-ассистент для анализа и работы с кодовой базой, "
+            "использующий модели Google Gemini."
+        )
+        description_label = QLabel(description_text)
+        description_label.setWordWrap(True)
+
+        # --- Ссылка на GitHub ---
+        github_link_text = f'<a href="{GITHUB_URL}">{self.tr("Посетить репозиторий на GitHub")}</a>'
+        github_label = QLabel(github_link_text)
+        github_label.setOpenExternalLinks(True) # Делает ссылку кликабельной
+
+        # --- Автор и лицензия ---
+        author_text = self.tr("Автор: {0} | Лицензия: MIT").format(AUTHOR_NAME)
+        author_label = QLabel(author_text)
+        author_label.setStyleSheet("color: #888;") # Серый цвет для менее важной информации
+
+        # --- Кнопка закрытия ---
+        close_button = QPushButton(self.tr("Закрыть"))
+        close_button.clicked.connect(self.accept)
+        button_layout = QHBoxLayout()
+        button_layout.addStretch(1)
+        button_layout.addWidget(close_button)
+
+        # --- Основная компоновка ---
+        main_layout = QVBoxLayout(self)
+        main_layout.addLayout(top_layout)
+        main_layout.addWidget(description_label)
+        main_layout.addSpacing(10)
+        main_layout.addWidget(github_label)
+        main_layout.addStretch(1)
+        main_layout.addWidget(author_label)
+        main_layout.addLayout(button_layout)
+
+    def _get_resource_path(self, filename: str) -> str:
+        """Вспомогательный метод для поиска ресурсов."""
+        if getattr(sys, 'frozen', False):
+            base_path = os.path.dirname(sys.executable)
+        else:
+            base_path = os.path.dirname(os.path.abspath(__file__))
+        return os.path.join(base_path, filename)
 
 # --- Основное окно приложения ---
 class MainWindow(QMainWindow):
@@ -675,7 +746,10 @@ class MainWindow(QMainWindow):
     @Slot()
     def _show_help_content(self): HelpDialog(self).exec()
     @Slot()
-    def _show_about_dialog(self): QMessageBox.about(self, self.tr("О программе {0}").format(APP_NAME), self.tr("<b>{0} v2.1</b><br>...").format(APP_NAME)) # Placeholder
+    def _show_about_dialog(self):
+        """Показывает кастомное окно "О программе"."""
+        dialog = AboutDialog(self)
+        dialog.exec()
     @Slot()
     def _show_log_viewer(self):
         if self._log_viewer_window is None:
