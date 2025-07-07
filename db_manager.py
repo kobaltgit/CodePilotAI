@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS context_data (
     file_path TEXT NOT NULL,
     type TEXT NOT NULL CHECK(type IN ('summary', 'chunk', 'full_file')), -- Тип контента
     chunk_num INTEGER, -- Порядковый номер чанка (для type='chunk')
-    content TEXT NOT NULL
+    content TEXT NOT NULL,
     UNIQUE(file_path, type, chunk_num)
 );
 
