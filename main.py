@@ -131,29 +131,36 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(central_widget)
         main_layout = QHBoxLayout(central_widget)
 
-        # --- Левая панель: Проекты ---
-        projects_panel = QWidget()
-        projects_layout = QVBoxLayout(projects_panel)
+        # --- Кнопка для сворачивания панели проектов ---
+        self.toggle_projects_button = QPushButton("◀")
+        self.toggle_projects_button.setToolTip(self.tr("Свернуть панель проектов"))
+        self.toggle_projects_button.setFixedWidth(24)
+        main_layout.addWidget(self.toggle_projects_button)
+
+        # --- Разделитель для панелей ---
+        splitter = QSplitter(Qt.Orientation.Horizontal)
+        self.main_splitter = splitter # Сохраняем ссылку на сплиттер
+
+        # --- Левая панель: Проекты (теперь это self.projects_panel) ---
+        self.projects_panel = QWidget()
+        projects_layout = QVBoxLayout(self.projects_panel)
         projects_layout.setContentsMargins(0, 0, 0, 0)
         projects_label = QLabel(self.tr("<b>Недавние проекты</b>"))
         self.projects_list_widget = QListWidget()
         self.projects_list_widget.setToolTip(self.tr("Двойной клик для открытия сессии"))
         projects_layout.addWidget(projects_label)
         projects_layout.addWidget(self.projects_list_widget)
+        splitter.addWidget(self.projects_panel)
 
         # --- Правая панель: Основная рабочая область ---
         right_panel = QWidget()
         right_layout = QVBoxLayout(right_panel)
         right_layout.setContentsMargins(0, 0, 0, 0)
-
-        # --- Разделитель ---
-        splitter = QSplitter(Qt.Orientation.Horizontal)
-        splitter.addWidget(projects_panel)
         splitter.addWidget(right_panel)
-        main_layout.addWidget(splitter)
-        self.main_splitter = splitter
 
-        # --- Вкладки для выбора типа проекта ---
+        main_layout.addWidget(splitter, 1) # Добавляем сплиттер с фактором растяжения
+
+        # --- Вкладки для выбора типа проекта (добавляются в right_panel) ---
         self.project_tabs = QTabWidget()
         right_layout.addWidget(self.project_tabs)
         
@@ -358,6 +365,7 @@ class MainWindow(QMainWindow):
         self.repo_url_lineedit.editingFinished.connect(lambda: self.view_model.updateRepoUrl(self.repo_url_lineedit.text()))
         self.branch_combobox.currentTextChanged.connect(self.view_model.updateSelectedBranch)
         self.select_local_path_button.clicked.connect(self.view_model.selectLocalPath)
+        self.toggle_projects_button.clicked.connect(self._toggle_projects_panel)
         
         self.projects_list_widget.itemDoubleClicked.connect(self._on_recent_project_selected)
 
@@ -578,15 +586,32 @@ class MainWindow(QMainWindow):
 
     # Методы сохранения/загрузки состояния окна
     def _load_settings(self):
+        """Загружает настройки положения и состояния окна."""
         self.resize(self.settings.value("window/size", QSize(1200, 800)))
         self.move(self.settings.value("window/pos", QPoint(50, 50)))
-        self.main_splitter.restoreState(self.settings.value("window/splitterState"))
+
+        is_collapsed = self.settings.value("window/projectsPanelCollapsed", False, type=bool)
+        if is_collapsed:
+            self.projects_panel.setVisible(False)
+            self.toggle_projects_button.setText("▶")
+            self.toggle_projects_button.setToolTip(self.tr("Развернуть панель проектов"))
+        else:
+            # Восстанавливаем состояние сплиттера только если панель не была свернута
+            splitter_state = self.settings.value("window/splitterState")
+            if splitter_state:
+                self.main_splitter.restoreState(splitter_state)
+
         self._load_recent_projects()
 
     def _save_settings(self):
+        """Сохраняет настройки положения и состояния окна."""
         self.settings.setValue("window/size", self.size())
         self.settings.setValue("window/pos", self.pos())
-        self.settings.setValue("window/splitterState", self.main_splitter.saveState())
+        self.settings.setValue("window/projectsPanelCollapsed", not self.projects_panel.isVisible())
+
+        # Сохраняем состояние сплиттера только если панель видима
+        if self.projects_panel.isVisible():
+            self.settings.setValue("window/splitterState", self.main_splitter.saveState())
         
     def _load_recent_projects(self):
         self.projects_list_widget.clear()
@@ -711,6 +736,18 @@ class MainWindow(QMainWindow):
             self.search_lineedit.blockSignals(True)
             self.search_lineedit.clear()
             self.search_lineedit.blockSignals(False)
+
+    @Slot()
+    def _toggle_projects_panel(self):
+        """Сворачивает или разворачивает панель проектов."""
+        if self.projects_panel.isVisible():
+            self.projects_panel.setVisible(False)
+            self.toggle_projects_button.setText("▶")
+            self.toggle_projects_button.setToolTip(self.tr("Развернуть панель проектов"))
+        else:
+            self.projects_panel.setVisible(True)
+            self.toggle_projects_button.setText("◀")
+            self.toggle_projects_button.setToolTip(self.tr("Свернуть панель проектов"))
     
 # --- Точка входа в приложение ---
 def setup_logging() -> str:
