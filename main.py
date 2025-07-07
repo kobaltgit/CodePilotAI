@@ -53,8 +53,7 @@ MAX_RECENT_PROJECTS = 10
 
 # --- Диалог справки (без изменений) ---
 class HelpDialog(QDialog):
-    # ... код HelpDialog остается таким же, как в предыдущих версиях ...
-    def __init__(self, parent=None):
+    def __init__(self, app_lang: str, parent=None):
         super().__init__(parent)
         self.setWindowTitle(self.tr("Справка - {0}").format(APP_NAME))
         self.setMinimumSize(700, 500)
@@ -63,18 +62,20 @@ class HelpDialog(QDialog):
         layout.addWidget(self.help_view, 1)
         script_dir = os.path.dirname(os.path.abspath(__file__))
 
-        current_app_lang = os.getenv('APP_LANGUAGE', QLocale.system().name().split('_')[0])
-        help_file = f"help_content_{current_app_lang}.html"
+        # Используем переданный язык для выбора файла справки
+        help_file = "help_content_en.html" if app_lang == 'en' else "help_content.html"
         html_file_path = os.path.join(script_dir, help_file)
-
-        if not os.path.exists(html_file_path):
-             html_file_path = os.path.join(script_dir, "help_content.html")
 
         if os.path.exists(html_file_path):
             local_url = QUrl.fromLocalFile(QFileInfo(html_file_path).absoluteFilePath())
             self.help_view.load(local_url)
         else:
-            self.help_view.setHtml(self.tr("<html><body><h1>Ошибка</h1><p>Файл справки 'help_content.html' не найден.</p></body></html>"))
+            fallback_path = os.path.join(script_dir, "help_content.html")
+            if os.path.exists(fallback_path):
+                local_url = QUrl.fromLocalFile(QFileInfo(fallback_path).absoluteFilePath())
+                self.help_view.load(local_url)
+            else:
+                self.help_view.setHtml(self.tr("<html><body><h1>Ошибка</h1><p>Файл справки не найден.</p></body></html>"))
 
         close_button = QPushButton(self.tr("Закрыть"))
         close_button.clicked.connect(self.accept)
@@ -155,6 +156,7 @@ class MainWindow(QMainWindow):
         self.view_model = view_model
         self.logger = logging.getLogger(__name__)
         self.settings = QSettings(QSettings.Format.IniFormat, QSettings.Scope.UserScope, "Kobalt", APP_NAME)
+        self._app_language = self.settings.value("interface/language", QLocale.system().name().split('_')[0])
 
         self._log_file_path = log_file_path
         self._log_viewer_window: Optional[LogViewerWindow] = None
@@ -412,15 +414,28 @@ class MainWindow(QMainWindow):
         help_menu.addAction(help_content_action); help_menu.addSeparator(); help_menu.addAction(about_action)
     
     # ... Остальные методы, такие как _create_language_menu, _connect_signals и т.д. ...
-    def _create_language_menu(self): # ... (без изменений) ...
+    def _create_language_menu(self):
         lang_menu = self.menuBar().addMenu(self.tr("&Язык"))
-        lang_group = QActionGroup(self); lang_group.setExclusive(True)
-        ru_action = QAction(self.tr("Русский"), self); ru_action.setCheckable(True); ru_action.triggered.connect(lambda: self._switch_language('ru'))
-        lang_menu.addAction(ru_action); lang_group.addAction(ru_action)
-        en_action = QAction(self.tr("English"), self); en_action.setCheckable(True); en_action.triggered.connect(lambda: self._switch_language('en'))
-        lang_menu.addAction(en_action); lang_group.addAction(en_action)
-        current_lang = os.getenv('APP_LANGUAGE', QLocale.system().name().split('_')[0])
-        (ru_action if current_lang == 'ru' else en_action).setChecked(True)
+        lang_group = QActionGroup(self)
+        lang_group.setExclusive(True)
+        
+        ru_action = QAction(self.tr("Русский"), self)
+        ru_action.setCheckable(True)
+        ru_action.triggered.connect(lambda: self._switch_language('ru'))
+        lang_menu.addAction(ru_action)
+        lang_group.addAction(ru_action)
+        
+        en_action = QAction(self.tr("English"), self)
+        en_action.setCheckable(True)
+        en_action.triggered.connect(lambda: self._switch_language('en'))
+        lang_menu.addAction(en_action)
+        lang_group.addAction(en_action)
+
+        # Используем правильный источник для установки галочки
+        if self._app_language == 'en':
+            en_action.setChecked(True)
+        else:
+            ru_action.setChecked(True)
 
     @Slot(str)
     def _switch_language(self, lang_code: str): # ... (без изменений) ...
@@ -744,7 +759,8 @@ class MainWindow(QMainWindow):
     @Slot(str, str, str)
     def _show_message_dialog(self, msg_type, title, message): QMessageBox.information(self, title, message)
     @Slot()
-    def _show_help_content(self): HelpDialog(self).exec()
+    def _show_help_content(self):
+        HelpDialog(self._app_language, self).exec()
     @Slot()
     def _show_about_dialog(self):
         """Показывает кастомное окно "О программе"."""
@@ -774,12 +790,22 @@ class MainWindow(QMainWindow):
         if dialog.exec():
             self.instruction_templates = dialog.get_updated_templates()
             if self._save_instruction_templates(): self._populate_templates_combobox(); self._update_settings_fields()
-    def _load_instruction_templates(self): # ... (без изменений) ...
+    def _load_instruction_templates(self):
+        lang_suffix = f"_{self._app_language}" if self._app_language == 'en' else ""
+        filename = f"instruction_templates{lang_suffix}.json"
+        
+        self._templates_file_path = self._get_resource_path(filename)
+
         if os.path.exists(self._templates_file_path):
             try:
-                with open(self._templates_file_path, 'r', encoding='utf-8') as f: self.instruction_templates = json.load(f)
-            except Exception as e: self.logger.error(f"Ошибка загрузки шаблонов: {e}")
-        else: self.instruction_templates = {}
+                with open(self._templates_file_path, 'r', encoding='utf-8') as f:
+                    self.instruction_templates = json.load(f)
+            except Exception as e:
+                self.logger.error(f"Ошибка загрузки шаблонов '{filename}': {e}")
+                self.instruction_templates = {}
+        else:
+            self.logger.warning(f"Файл шаблонов '{filename}' не найден.")
+            self.instruction_templates = {}
     def _save_instruction_templates(self): # ... (без изменений) ...
         try:
             with open(self._templates_file_path, 'w', encoding='utf-8') as f: json.dump(self.instruction_templates, f, ensure_ascii=False, indent=4)
