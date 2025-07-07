@@ -74,6 +74,7 @@ class ChatViewModel(QObject):
     resetUiForNewSession = Signal()
     apiRequestStarted = Signal()
     setInitialSessionPathSignal = Signal(str) # Для обработки запуска через файл
+    sessionSavedSuccessfully = Signal(str)
 
     # --- Сигналы для управления поиском в ChatView ---
     performSearch = Signal(str, object)
@@ -316,23 +317,33 @@ class ChatViewModel(QObject):
     @Slot(str)
     def sessionFileSelectedToOpen(self, filepath: str):
         if filepath: self._model.load_session(filepath)
+    
     @Slot()
     def saveSession(self) -> bool:
-        if self._model.get_current_session_filepath():
-            success, _ = self._model.save_session()
+        filepath = self._model.get_current_session_filepath()
+        if filepath:
+            success, saved_path = self._model.save_session()
+            if success and saved_path:
+                self.sessionSavedSuccessfully.emit(saved_path)
             return success
         else:
-            self.saveSessionAs(); return False
+            self.saveSessionAs()
+            return False
+
     @Slot()
     def saveSessionAs(self):
         default_name = self.tr("Сессия_{0}{1}").format(datetime.datetime.now().strftime('%Y%m%d_%H%M%S'), db_manager.SESSION_EXTENSION)
         file_filter = self.tr("Файлы сессий (*{0})").format(db_manager.SESSION_EXTENSION)
         self.showFileDialog.emit("save", self.tr("Сохранить сессию как..."), f"{default_name};;{file_filter}")
+
     @Slot(str)
     def sessionFileSelectedToSave(self, filepath: str):
         if filepath:
-            if not filepath.endswith(db_manager.SESSION_EXTENSION): filepath += db_manager.SESSION_EXTENSION
-            self._model.save_session(filepath)
+            if not filepath.endswith(db_manager.SESSION_EXTENSION):
+                filepath += db_manager.SESSION_EXTENSION
+            success, saved_path = self._model.save_session(filepath)
+            if success and saved_path:
+                self.sessionSavedSuccessfully.emit(saved_path)
 
     @Slot()
     def toggleSettings(self):

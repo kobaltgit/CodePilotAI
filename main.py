@@ -399,8 +399,9 @@ class MainWindow(QMainWindow):
         self.view_model.showFileDialog.connect(self._show_file_dialog)
         self.view_model.showMessageDialog.connect(self._show_message_dialog)
         self.view_model.resetUiForNewSession.connect(self._update_all_states_from_vm)
-
+        
         self.view_model.setInitialSessionPathSignal.connect(self._add_to_recent_projects)
+        self.view_model.sessionSavedSuccessfully.connect(self._add_to_recent_projects)
 
         # Окно саммари
         self.view_summaries_button.clicked.connect(self._show_summaries_window)
@@ -610,7 +611,8 @@ class MainWindow(QMainWindow):
         elif dialog_type == "save":
             default_path, file_filter = filter_or_dir.split(";;")
             filepath, _ = QFileDialog.getSaveFileName(self, title, os.path.join(os.path.expanduser("~"), default_path), file_filter)
-            if filepath: self._add_to_recent_projects(filepath); self.view_model.sessionFileSelectedToSave(filepath)
+            if filepath:
+                self.view_model.sessionFileSelectedToSave(filepath)
 
     # Остальные слоты и методы остаются практически без изменений,
     # так как они уже вызываются из ViewModel, который мы адаптировали.
