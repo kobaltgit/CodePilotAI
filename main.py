@@ -264,6 +264,26 @@ class MainWindow(QMainWindow):
         instructions_container_layout.addLayout(templates_layout)
         right_layout.addWidget(self.instructions_container)
 
+        # --- Панель поиска по диалогу ---
+        search_panel = QWidget()
+        search_layout = QHBoxLayout(search_panel)
+        search_layout.setContentsMargins(0, 5, 0, 5)
+        self.search_lineedit = QLineEdit()
+        self.search_lineedit.setPlaceholderText(self.tr("Найти в диалоге..."))
+        self.find_prev_button = QPushButton(self.tr("Назад"))
+        self.find_prev_button.setShortcut(QKeySequence.StandardKey.FindPrevious) # Shift+F3
+        self.find_next_button = QPushButton(self.tr("Далее"))
+        self.find_next_button.setShortcut(QKeySequence.StandardKey.FindNext) # F3
+        self.clear_search_button = QPushButton("X")
+        self.clear_search_button.setFixedSize(self.find_next_button.sizeHint().height(), self.find_next_button.sizeHint().height())
+        self.clear_search_button.setToolTip(self.tr("Сбросить поиск"))
+        search_layout.addWidget(QLabel(self.tr("Поиск:")), 0)
+        search_layout.addWidget(self.search_lineedit, 1)
+        search_layout.addWidget(self.find_prev_button, 0)
+        search_layout.addWidget(self.find_next_button, 0)
+        search_layout.addWidget(self.clear_search_button, 0)
+        right_layout.addWidget(search_panel)
+
         self.dialog_textedit = ChatView(self.view_model, self)
         self.input_textedit = QTextEdit(); self.input_textedit.setPlaceholderText(self.tr("Введите запрос (Ctrl+Enter для отправки)...")); self.input_textedit.setFixedHeight(100)
         
@@ -278,6 +298,7 @@ class MainWindow(QMainWindow):
         
         status_bar = QStatusBar(self); self.setStatusBar(status_bar); status_bar.addPermanentWidget(self.token_status_label)
         self.input_textedit.installEventFilter(self)
+        self._update_search_buttons_state(False)
 
     def _create_menu(self):
         menu_bar = self.menuBar()
@@ -405,6 +426,13 @@ class MainWindow(QMainWindow):
 
         # Окно саммари
         self.view_summaries_button.clicked.connect(self._show_summaries_window)
+
+        # Поиск по чату
+        self.search_lineedit.textChanged.connect(self.view_model.startOrUpdateSearch)
+        self.find_next_button.clicked.connect(self.view_model.find_next)
+        self.find_prev_button.clicked.connect(self.view_model.find_previous)
+        self.clear_search_button.clicked.connect(self.view_model.clear_search)
+        self.view_model.searchStatusUpdate.connect(self._update_search_buttons_state)
 
     def _show_summaries_window(self):
         if self.summaries_window is None:
@@ -672,6 +700,17 @@ class MainWindow(QMainWindow):
             pass
         elif selected_text != self.CUSTOM_INSTRUCTIONS_TEXT:
             self.instructions_textedit.setPlainText(self.instruction_templates.get(selected_text, ""))
+
+    @Slot(bool)
+    def _update_search_buttons_state(self, is_active: bool):
+        """Обновляет доступность кнопок навигации по поиску."""
+        self.find_next_button.setEnabled(is_active)
+        self.find_prev_button.setEnabled(is_active)
+        # Очищаем поле ввода, если поиск был сброшен
+        if not is_active and self.search_lineedit.text():
+            self.search_lineedit.blockSignals(True)
+            self.search_lineedit.clear()
+            self.search_lineedit.blockSignals(False)
     
 # --- Точка входа в приложение ---
 def setup_logging() -> str:

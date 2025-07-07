@@ -23,7 +23,11 @@ class ChatViewModel(QObject):
     Посредник между View (MainWindow) и Model (ChatModel).
     Предоставляет данные для отображения и обрабатывает команды пользователя.
     """
-
+    # --- Сигналы для управления поиском в ChatView ---
+    performSearch = Signal(str, object)
+    clearSearchHighlight = Signal()
+    searchStatusUpdate = Signal(bool)
+    
     # --- Сигналы для обновления свойств View ---
     # Статусы
     geminiApiKeyStatusTextChanged = Signal()
@@ -86,6 +90,8 @@ class ChatViewModel(QObject):
         if not isinstance(model, ChatModel):
             raise TypeError("Model must be an instance of ChatModel")
         self._model = model
+
+        self._search_query: Optional[str] = None
 
         # --- Внутреннее состояние ViewModel ---
         self._is_chat_view_ready: bool = False
@@ -514,4 +520,45 @@ class ChatViewModel(QObject):
 
     @Slot(bool)
     def setSearchResultStatus(self, found: bool):
+        logger.debug(f"Получен статус поиска от ChatView: Найдено={found}")
+
+        # --- Методы для поиска ---
+    @Slot(str)
+    def startOrUpdateSearch(self, query: str):
+        """Запускает новый поиск или обновляет существующий."""
+        query = query.strip()
+        if not query:
+            self.clear_search()
+        else:
+            self._search_query = query
+            # Отправляем начальный поисковый запрос без флагов (поиск вперед от начала)
+            self.performSearch.emit(self._search_query, QWebEnginePage.FindFlag(0))
+            self.searchStatusUpdate.emit(True)
+
+    @Slot()
+    def clear_search(self):
+        """Очищает поиск и подсветку."""
+        if self._search_query:
+            self._search_query = None
+            self.clearSearchHighlight.emit()
+            self.searchStatusUpdate.emit(False)
+
+    @Slot()
+    def find_next(self):
+        """Ищет следующее совпадение."""
+        if self._search_query:
+            self.performSearch.emit(self._search_query, QWebEnginePage.FindFlag(0))
+
+    @Slot()
+    def find_previous(self):
+        """Ищет предыдущее совпадение."""
+        if self._search_query:
+            self.performSearch.emit(self._search_query, QWebEnginePage.FindFlag.FindBackward)
+
+    @Slot(bool)
+    def setSearchResultStatus(self, found: bool):
+        """
+        Слот для обратной связи от ChatView о результатах поиска.
+        В данный момент просто логирует, но может быть расширен.
+        """
         logger.debug(f"Получен статус поиска от ChatView: Найдено={found}")
