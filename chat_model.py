@@ -592,7 +592,7 @@ class ChatModel(QObject):
             return []
 
         # 2. Контекст проекта (если есть и RAG включен)
-        if self._rag_enabled and self._project_context:
+        if self._project_context:
             context_str = self._build_context_string(prompt_token_budget - current_tokens)
             if context_str:
                 context_part = [
@@ -716,68 +716,48 @@ class ChatModel(QObject):
     def _build_context_string(self, remaining_budget_tokens: int) -> str:
         """
         Собирает строку контекста из self._project_context, не превышая бюджет токенов.
-        Отдает приоритет саммари, затем чанкам, затем полным файлам.
+        Корректно обрабатывает режимы с включенным и выключенным RAG.
         """
-        if not self._project_context or not self._gemini_api_key_loaded:
+        if not self._project_context:
             return ""
-        
-        context_parts_list = []
-        current_total_text_length = 0 # Используем длину текста как прокси для токенов для предварительной оценки
 
-        # Грубый коэффициент перевода токенов в символы (примерно 4 символа на токен для английского)
-        # Для других языков может отличаться, но это для "черновой" оценки.
+        context_parts_list = []
+        # Грубый коэффициент перевода токенов в символы для предварительной оценки
         CHAR_PER_TOKEN_APPROX = 4
         char_budget = remaining_budget_tokens * CHAR_PER_TOKEN_APPROX
-        
-        # 1. Собираем все саммари
-        summaries_to_add = []
-        for item in self._project_context:
-            if item['type'] == 'summary':
-                header = self.tr("--- Обзор файла: {0} ---\n").format(item['file_path'])
-                text = header + item['content'] + "\n\n"
-                summaries_to_add.append((text, item['file_path'])) # Сохраняем и путь для логирования
-        
-        # Добавляем саммари, пока помещаются
-        for text, file_path in summaries_to_add:
+        current_total_text_length = 0
+
+        # Собираем данные в зависимости от режима RAG
+        items_to_add = []
+        if self._rag_enabled:
+            # Режим RAG: Сначала все саммари, потом все чанки
+            summaries = []
+            chunks = []
+            for item in self._project_context:
+                if item['type'] == 'summary':
+                    header = self.tr("--- Обзор файла: {0} ---\n").format(item['file_path'])
+                    summaries.append(header + item['content'] + "\n\n")
+                elif item['type'] == 'chunk':
+                    header = self.tr("--- Фрагмент ({0}) из файла: {1} ---\n").format(item.get('chunk_num', 0), item['file_path'])
+                    chunks.append(header + item['content'] + "\n\n")
+            items_to_add = summaries + chunks
+        else:
+            # Режим без RAG: только полные файлы
+            for item in self._project_context:
+                if item['type'] == 'full_file':
+                    header = self.tr("--- Содержимое файла: {0} ---\n").format(item['file_path'])
+                    items_to_add.append(header + item['content'] + "\n\n")
+
+        # Добавляем собранные части в контекст, пока не исчерпается бюджет
+        for text in items_to_add:
             if current_total_text_length + len(text) <= char_budget:
                 context_parts_list.append(text)
                 current_total_text_length += len(text)
             else:
-                logger.warning(self.tr("Саммари для '{0}' не поместилось в контекст.").format(file_path))
-                break # Больше саммари не добавляем
+                logger.warning(self.tr("Часть контекста проекта не поместилась в окно токенов и была обрезана."))
+                self.apiIntermediateStep.emit(self.tr("Внимание: Контекст проекта был урезан, так как превышает лимит токенов."))
+                break # Бюджет исчерпан
 
-        # 2. Затем добавляем чанки или полные файлы, если RAG включен
-        if self._rag_enabled:
-            content_items_to_add = []
-            # Группируем чанки по файлам и сортируем, чтобы они шли последовательно
-            grouped_chunks = {}
-            for item in self._project_context:
-                if item['type'] in ('chunk', 'full_file'):
-                    grouped_chunks.setdefault(item['file_path'], []).append(item)
-            
-            # Сортируем чанки внутри каждого файла по chunk_num
-            for file_path in sorted(grouped_chunks.keys()):
-                grouped_chunks[file_path].sort(key=lambda x: x.get('chunk_num', 0))
-                for item in grouped_chunks[file_path]:
-                    if item['type'] == 'chunk':
-                        header = self.tr("--- Фрагмент ({0}) из файла: {1} ---\n").format(item['chunk_num'], item['file_path'])
-                    else: # full_file
-                        header = self.tr("--- Содержимое файла: {0} ---\n").format(item['file_path'])
-                    text = header + item['content'] + "\n\n"
-                    content_items_to_add.append((text, item['file_path']))
-
-            # Добавляем чанки/файлы, пока помещаются
-            for text, file_path in content_items_to_add:
-                if current_total_text_length + len(text) <= char_budget:
-                    context_parts_list.append(text)
-                    current_total_text_length += len(text)
-                else:
-                    logger.warning(self.tr("Фрагмент/файл '{0}' не поместился в контекст.").format(file_path))
-                    break # Бюджет исчерпан
-
-        # Если контекст все еще слишком большой после добавления,
-        # это будет обнаружено по токенам позже в _build_final_prompt,
-        # и будет выдана ошибка.
         return "".join(context_parts_list)
 
 
