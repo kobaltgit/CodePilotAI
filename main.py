@@ -1,7 +1,7 @@
 # --- Файл: main.py ---
 # --- Глобальные константы ---
 APP_NAME = "CodePilotAI"
-APP_VERSION = "1.0.0" # Пример версии
+APP_VERSION = "1.0.1" # Пример версии
 AUTHOR_NAME = "kobaltGIT"
 GITHUB_URL = "https://github.com/kobaltgit/CodePilotAI"
 APP_ICON_FILENAME = "app_icon.png"
@@ -23,7 +23,7 @@ from PySide6.QtWidgets import (
     QPushButton, QTextEdit, QLabel, QLineEdit, QFileDialog,
     QSizePolicy, QSpinBox, QMessageBox, QStatusBar, QGroupBox,
     QCheckBox, QDialog, QComboBox, QInputDialog, QStyle, QSplitter,
-    QListWidget, QListWidgetItem, QTabWidget
+    QListWidget, QListWidgetItem, QTabWidget, QProgressBar
 )
 from PySide6.QtCore import (
     Qt, Slot, QUrl, QTimer, QCoreApplication, QFileInfo, QTranslator, QLocale, QSettings, QPoint, QSize
@@ -167,7 +167,11 @@ class MainWindow(QMainWindow):
         self._load_instruction_templates()
 
         self.token_status_label = QLabel(self.tr("Токены: ..."))
-        self.token_status_label.setStyleSheet("padding-right: 10px;")
+        self.token_status_label.setStyleSheet("padding-right: 8px;")
+        # --- НОВОЕ: Инициализируем "лампочку" и статус-бар ---
+        self.network_status_light = QLabel("⬤ ")
+        self.network_status_light.setToolTip(self.tr("Статус сети"))        
+
         self._status_clear_timer = QTimer(self)
         self._status_clear_timer.setSingleShot(True)
         self._status_clear_timer.timeout.connect(self._clear_temporary_status_message)
@@ -268,12 +272,25 @@ class MainWindow(QMainWindow):
         analysis_layout = QHBoxLayout()
         self.analyze_repo_button = QPushButton(self.tr("Анализировать"))
         self.cancel_analysis_button = QPushButton(self.tr("Отмена анализа"))
+
+        # --- НОВОЕ: Прогресс-бар ---
+        self.analysis_progress_bar = QProgressBar()
+        self.analysis_progress_bar.setVisible(False) # Изначально скрыт
+        self.analysis_progress_bar.setTextVisible(True)
+        self.analysis_progress_bar.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
         self.view_summaries_button = QPushButton("👁️")
         self.view_summaries_button.setToolTip(self.tr("Просмотреть проанализированные файлы"))
         self.view_summaries_button.setFixedSize(32, 32)
         font = self.view_summaries_button.font(); font.setPointSize(14); self.view_summaries_button.setFont(font)
         analysis_layout.addWidget(self.analyze_repo_button, 1)
         analysis_layout.addWidget(self.cancel_analysis_button, 1)
+
+        # --- ДОБАВЛЕНО: Добавляем прогресс-бар в компоновку ---
+        analysis_layout.addWidget(self.analysis_progress_bar, 2)
+        analysis_layout.addSpacing(20)
+        analysis_layout.addWidget(self.view_summaries_button)
+
         analysis_layout.addSpacing(20)
         analysis_layout.addWidget(self.view_summaries_button)
         analysis_layout.addStretch(0)
@@ -374,9 +391,14 @@ class MainWindow(QMainWindow):
 
         right_layout.addWidget(self.dialog_textedit, 1)
         right_layout.addWidget(self.input_textedit)
-        right_layout.addLayout(bottom_button_layout)
+        right_layout.addLayout(bottom_button_layout)        
         
-        status_bar = QStatusBar(self); self.setStatusBar(status_bar); status_bar.addPermanentWidget(self.token_status_label)
+        status_bar = QStatusBar(self)
+        self.setStatusBar(status_bar)
+        status_bar.addPermanentWidget(self.token_status_label)
+        # --- ДОБАВЛЕНО: Добавляем лампочку в статус-бар ---
+        status_bar.addPermanentWidget(self.network_status_light)
+
         self.input_textedit.installEventFilter(self)
         self._update_search_buttons_state(False)
 
@@ -490,6 +512,10 @@ class MainWindow(QMainWindow):
         self.view_model.canCancelRequestChanged.connect(self._update_button_states)
         self.view_model.canAnalyzeChanged.connect(self._update_button_states)
         self.view_model.canCancelAnalysisChanged.connect(self._update_button_states)
+        # --- НОВЫЕ ПОДКЛЮЧЕНИЯ ---
+        self.view_model.analysisStateChanged.connect(self._on_analysis_state_changed)
+        self.view_model.analysisProgress_for_bar_changed.connect(self._update_analysis_progress_bar)
+        self.view_model.networkStatusChanged.connect(self._update_network_status_light)
 
         self.view_model.availableModelsChanged.connect(self._populate_models_combobox)
         # self.view_model.projectDataChanged.connect(self._update_project_fields)
@@ -556,6 +582,33 @@ class MainWindow(QMainWindow):
         self._populate_models_combobox(self.view_model._model.get_available_models())
         self._update_button_states()
         self._update_window_title()
+
+    # --- НОВЫЕ СЛОТЫ ---
+    @Slot(bool)
+    def _on_analysis_state_changed(self, is_running: bool):
+        """Показывает или скрывает прогресс-бар."""
+        self.analysis_progress_bar.setVisible(is_running)
+        if not is_running:
+            # Сбрасываем значение при завершении
+            self.analysis_progress_bar.setValue(0)
+
+    @Slot(int, int)
+    def _update_analysis_progress_bar(self, processed: int, total: int):
+        """Обновляет значение прогресс-бара."""
+        if total > 0:
+            self.analysis_progress_bar.setMaximum(total)
+            self.analysis_progress_bar.setValue(processed)
+            self.analysis_progress_bar.setFormat(f"{processed} / {total}")
+
+    @Slot(bool)
+    def _update_network_status_light(self, is_online: bool):
+        """Обновляет цвет и подсказку для индикатора сети."""
+        if is_online:
+            self.network_status_light.setStyleSheet("color: #008000;") # Зеленый
+            self.network_status_light.setToolTip(self.tr("Сеть доступна"))
+        else:
+            self.network_status_light.setStyleSheet("color: #ff6b6b;") # Красный
+            self.network_status_light.setToolTip(self.tr("Нет подключения к сети"))
 
     @Slot()
     def _on_project_tab_changed(self, index):

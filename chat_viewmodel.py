@@ -6,12 +6,14 @@ import datetime
 import logging
 from typing import Optional, List, Dict, Any, Tuple, Set
 
-from PySide6.QtCore import QObject, Signal, Slot, Property, QUrl
+from PySide6.QtCore import QObject, Signal, Slot, Property, QUrl, QThread
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWebEngineCore import QWebEnginePage
+from PySide6.QtWidgets import QApplication
 
 from chat_model import ChatModel, CONTEXT_WINDOW_LIMIT
 import db_manager
+from network_checker import NetworkStatusChecker
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +48,11 @@ class ChatViewModel(QObject):
     selectedBranchChanged = Signal(str)
     availableBranchesChanged = Signal(list)
     # ---
+
+    # --- НОВЫЕ СИГНАЛЫ ДЛЯ UI ---
+    analysisStateChanged = Signal(bool) # True - запущен, False - остановлен
+    analysisProgress_for_bar_changed = Signal(int, int) # processed, total
+    networkStatusChanged = Signal(bool) # True - онлайн, False - оффлайн
 
     # Поля настроек
     modelNameChanged = Signal()
@@ -91,6 +98,11 @@ class ChatViewModel(QObject):
             raise TypeError("Model must be an instance of ChatModel")
         self._model = model
 
+        # --- НОВОЕ: Настройка проверки сети ---
+        self._network_thread: Optional[QThread] = None
+        self._network_checker: Optional[NetworkStatusChecker] = None
+        self._setup_network_checker()
+
         self._search_query: Optional[str] = None
 
         # --- Внутреннее состояние ViewModel ---
@@ -109,6 +121,22 @@ class ChatViewModel(QObject):
 
         self._connect_model_signals()
         self._on_session_loaded() # Первичная инициализация
+
+    def _setup_network_checker(self):
+        """Инициализирует и запускает воркер для проверки сети."""
+        self._network_thread = QThread()
+        self._network_checker = NetworkStatusChecker()
+        self._network_checker.moveToThread(self._network_thread)
+
+        self._network_checker.status_changed.connect(self.networkStatusChanged)
+        self._network_thread.started.connect(self._network_checker.start_checking)
+        # Убедимся, что поток завершается при выходе из приложения
+        self._network_thread.finished.connect(self._network_checker.deleteLater)
+        qapp = QApplication.instance()
+        if qapp:
+            qapp.aboutToQuit.connect(self._network_thread.quit)
+
+        self._network_thread.start()
 
     def _connect_model_signals(self):
         # Статусы
@@ -387,6 +415,7 @@ class ChatViewModel(QObject):
     @Slot()
     def _on_analysis_started(self):
         self._is_analysis_running = True
+        self.analysisStateChanged.emit(True)
         self._update_all_button_states()
 
     @Slot(int, int, str) # <--- Убедитесь, что этот слот находится здесь
@@ -394,16 +423,19 @@ class ChatViewModel(QObject):
         """Обрабатывает обновление прогресса анализа и форматирует его для статус-бара."""
         progress_text = self.tr("Анализ: {0}/{1} ({2})").format(processed, total, os.path.basename(file_path))
         self.statusMessageChanged.emit(progress_text, 0) # 0 означает, что сообщение не исчезнет автоматически
+        self.analysisProgress_for_bar_changed.emit(processed, total)
 
     @Slot()
     def _on_analysis_finished(self):
         self._is_analysis_running = False
+        self.analysisStateChanged.emit(False)
         self._update_all_button_states()
         self.chatUpdateRequired.emit()   
 
     @Slot(str)
     def _on_analysis_error(self, error_message: str):
         self._is_analysis_running = False
+        self.analysisStateChanged.emit(False)
         self.showMessageDialog.emit("crit", self.tr("Ошибка анализа"), error_message)
         self._update_all_button_states()
 
