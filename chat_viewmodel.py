@@ -62,6 +62,8 @@ class ChatViewModel(QObject):
     instructionsTextChanged = Signal()
     checkedExtensionsChanged = Signal(set, str)
 
+    toggleAllButtonPropsChanged = Signal()
+
     # Состояние окна и чата
     windowTitleChanged = Signal()
     isDirtyChanged = Signal()
@@ -250,6 +252,16 @@ class ChatViewModel(QObject):
 
     @Property(bool, notify=canCancelAnalysisChanged)
     def canCancelAnalysis(self) -> bool: return self._is_analysis_running
+
+    @Property(str, notify=toggleAllButtonPropsChanged)
+    def toggleAllButtonText(self) -> str:
+        """Возвращает текст для кнопки 'Скрыть/Показать все'."""
+        if not self._model.get_chat_history():
+            return self.tr("Скрыть все") # Текст по умолчанию
+
+        # Если все сообщения уже исключены, кнопка должна предлагать их показать
+        all_excluded = all(msg.get("excluded", False) for msg in self._model.get_chat_history())
+        return self.tr("Показать все") if all_excluded else self.tr("Скрыть все")
     
     # --- Свойства видимости ---
     @Property(bool, notify=isChatViewReadyChanged)
@@ -390,6 +402,11 @@ class ChatViewModel(QObject):
     @Slot(int)
     def toggleApiExclusion(self, index: int): self._model.toggle_api_exclusion(index)
 
+    @Slot()
+    def toggleAllMessagesExclusion(self):
+        """Слот для вызова пакетного переключения исключения сообщений."""
+        self._model.toggle_all_messages_exclusion()
+
     # --- Слоты, реагирующие на сигналы Модели ---
 
     @Slot()
@@ -471,6 +488,7 @@ class ChatViewModel(QObject):
     @Slot(list)
     def _on_history_changed(self, history: List[Dict]):
         self.chatUpdateRequired.emit()
+        self.toggleAllButtonPropsChanged.emit()
 
     @Slot(str, bool)
     def _on_session_state_changed(self, filepath: Optional[str], is_dirty: bool):
@@ -497,6 +515,7 @@ class ChatViewModel(QObject):
         self.resetUiForNewSession.emit()
         self.windowTitleChanged.emit()
         self.isDirtyChanged.emit()
+        self.toggleAllButtonPropsChanged.emit()
 
     @Slot(str)
     def _on_session_error(self, error_message: str):

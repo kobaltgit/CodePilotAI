@@ -374,11 +374,17 @@ class MainWindow(QMainWindow):
         self.clear_search_button = QPushButton("X")
         self.clear_search_button.setFixedSize(self.find_next_button.sizeHint().height(), self.find_next_button.sizeHint().height())
         self.clear_search_button.setToolTip(self.tr("Сбросить поиск"))
+
+        self.toggle_all_msg_button = QPushButton()
+        self.toggle_all_msg_button.setToolTip(self.tr("Скрыть все сообщения из контекста API или показать их обратно"))
+
         search_layout.addWidget(QLabel(self.tr("Поиск:")), 0)
         search_layout.addWidget(self.search_lineedit, 1)
         search_layout.addWidget(self.find_prev_button, 0)
         search_layout.addWidget(self.find_next_button, 0)
         search_layout.addWidget(self.clear_search_button, 0)
+        search_layout.addSpacing(15) # <-- Добавляем отступ
+        search_layout.addWidget(self.toggle_all_msg_button, 0) # <-- Добавляем новую кнопку
         right_layout.addWidget(search_panel)
 
         self.dialog_textedit = ChatView(self.view_model, self)
@@ -547,6 +553,10 @@ class MainWindow(QMainWindow):
         # Окно саммари
         self.view_summaries_button.clicked.connect(self._show_summaries_window)
 
+        # --- НОВОЕ ПОДКЛЮЧЕНИЕ ---
+        self.toggle_all_msg_button.clicked.connect(self.view_model.toggleAllMessagesExclusion)
+        self.view_model.toggleAllButtonPropsChanged.connect(self._update_toggle_all_button)
+
         # Поиск по чату
         self.search_lineedit.textChanged.connect(self.view_model.startOrUpdateSearch)
         self.find_next_button.clicked.connect(self.view_model.find_next)
@@ -651,8 +661,16 @@ class MainWindow(QMainWindow):
         self.cancel_button.setEnabled(self.view_model.canCancelRequest)
         self.analyze_repo_button.setEnabled(self.view_model.canAnalyze)
         self.cancel_analysis_button.setEnabled(self.view_model.canCancelAnalysis)
+        has_history = bool(self.view_model.getChatHistoryForView()[0])
         has_summaries = bool(self.view_model._model._project_context)
         self.view_summaries_button.setEnabled(has_summaries)
+        self.toggle_all_msg_button.setEnabled(has_history)
+
+    @Slot()
+    def _update_toggle_all_button(self):
+        """Обновляет текст и доступность кнопки 'Скрыть/Показать все'."""
+        self.toggle_all_msg_button.setText(self.view_model.toggleAllButtonText)
+        self.toggle_all_msg_button.setEnabled(bool(self.view_model.getChatHistoryForView()[0]))
     
     # ... другие слоты обновления UI (без значительных изменений) ...
     @Slot()
@@ -713,6 +731,7 @@ class MainWindow(QMainWindow):
             role = msg.get("role"); content = msg.get("parts", [""])[0]; is_excluded = msg.get("excluded", False)
             html_out = markdown.markdown(content, extensions=md_ext) if role == "model" else f"<pre>{html.escape(content)}</pre>"
             self.dialog_textedit.add_message(role, f"{html_out}<hr>", index, is_excluded, is_last=False)
+            self._update_toggle_all_button()
         if intermediate_step: self.dialog_textedit.add_message("system", f"<i>{html.escape(intermediate_step)}</i>", -1, False, is_last=False)
         if self.view_model.canCancelRequest or self.view_model.canCancelAnalysis: self.dialog_textedit.show_loader()
         if last_error: self.dialog_textedit.add_error_message(last_error)

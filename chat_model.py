@@ -849,6 +849,25 @@ class ChatModel(QObject):
         if 0 <= index < len(self._chat_history):
             self._chat_history[index]["excluded"] = not self._chat_history[index].get("excluded", False)
             self._mark_dirty(); self.historyChanged.emit(self.get_chat_history())
+
+    def toggle_all_messages_exclusion(self):
+        """
+        Исключает или включает все сообщения в истории чата.
+        Если есть хотя бы одно неисключенное сообщение, исключает все.
+        Если все сообщения уже исключены, включает все.
+        """
+        if not self._chat_history:
+            return
+
+        # Определяем, нужно ли нам исключать (True) или включать (False) сообщения.
+        # Если хотя бы одно сообщение не исключено, то наша цель - исключить все.
+        target_exclusion_state = any(not msg.get("excluded", False) for msg in self._chat_history)
+
+        for msg in self._chat_history:
+            msg["excluded"] = target_exclusion_state
+
+        self._mark_dirty()
+        self.historyChanged.emit(self.get_chat_history())
     
     # --- Управление Сессиями ---
     def new_session(self):
