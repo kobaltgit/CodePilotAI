@@ -26,7 +26,7 @@
         a:hover { text-decoration: underline; }
         .important {
             background-color: rgba(255, 235, 59, 0.1); /* Yellowish background */
-            border-left: 4px solid #ffeb3b; /* Yellow bar on the left */
+            border-left: 4px solid #ffeb3b; /* Yellow left border */
             padding: 10px 15px;
             margin: 1em 0;
             border-radius: 4px;
@@ -34,82 +34,86 @@
     </style>
 </head>
 <body>
-    <h1>Help - CodePilotAI</h1>
+    <h1>CodePilotAI Help</h1>
 
-    <h2>Core Features</h2>
+    <h2>Key Features</h2>
     <p>
-        <b>CodePilotAI</b> is a versatile assistant for interacting with the Google Gemini artificial intelligence. You can use it in three main ways:
+        <b>CodePilotAI</b> is a versatile assistant for interacting with Google Gemini AI. You can use it in three main ways:
     </p>
     <ol>
-        <li><b>Simple Chat:</b> Have a conversation with the AI on any topic, just like a regular chatbot, without analyzing any files.</li>
-        <li><b>Project Analysis:</b> Provide the application with access to a codebase (from GitHub or a local folder) so the AI can answer questions based on the context of your project.</li>
-        <li><b>File Handling:</b> The program can read and analyze various file formats, such as <code>.py, .js, .html, .css, .json, .md, .txt</code>, and more.</li>
+        <li><b>Simple Chat:</b> Engage in a dialogue with AI on any topic, like a regular chatbot, without analyzing any files.</li>
+        <li><b>Project Analysis:</b> Grant the program access to a codebase (from GitHub or a local folder) so that the AI can answer questions based on your project's context.</li>
+        <li><b>File Interaction:</b> The program can read and analyze files of various formats, such as <code>.py, .js, .html, .css, .json, .md, .txt</code> and others.</li>
     </ol>
 
     <h2>First Launch: Setting Up Access Keys</h2>
     <div class="important">
-        <p>To run the application, you need at least one access key: the <b>Gemini API Key</b>. If you plan to work with private repositories on GitHub, you will also need a <b>GitHub Personal Access Token</b>.</p>
+        <p>The program requires at least one access key: <b>Gemini API Key</b>. If you plan to work with private GitHub repositories, you will also need a <b>GitHub Personal Access Token</b>.</p>
         <ul>
-            <li><b>Gemini API Key:</b> Your key to access Google Gemini models. You can get one for free at <a href="https://makersuite.google.com/app/apikey">Google AI Studio</a>. This key is required for all modes of operation.</li>
-            <li><b>GitHub Personal Access Token (PAT):</b> A token for accessing repositories via the GitHub API. It is only needed for analyzing repositories on GitHub (especially private ones). You can create one in your account settings: <a href="https://github.com/settings/tokens">Tokens (classic)</a>. When creating the token, make sure to select the <code>repo</code> scope.</li>
+            <li><b>Gemini API Key:</b> Your key for accessing Google Gemini models. You can get it for free at <a href="https://makersuite.google.com/app/apikey">Google AI Studio</a>. This key is necessary for all operating modes.</li>
+            <li><b>GitHub Personal Access Token (PAT):</b> A token for accessing repositories via the GitHub API. It is only needed for analyzing GitHub repositories (especially private ones). You can create it in your account settings: <a href="https://github.com/settings/tokens">Tokens (classic)</a>. When creating the token, make sure you select the <code>repo</code> scope.</li>
         </ul>
         <p>
-            After obtaining the keys, enter them into the corresponding fields in the "Settings" section of the main window and click "Save". The keys will be stored locally in an <code>.env</code> file in the program's folder.
+            After obtaining the keys, enter them into the corresponding fields in the "Settings" section of the main window and click "Save". The keys will be saved locally to an <code>.env</code> file in the program's folder.
         </p>
     </div>
-
+    
     <h2>Working with Project Analysis</h2>
-    <h3>How It Works</h3>
-    <p>When you click the "Analyze" button, CodePilotAI reads your project files and prepares them to be sent to the AI. There are two analysis modes:</p>
+    <h3>How it works?</h3>
+    <p>When you click the "Analyze" button, CodePilotAI reads your project files and prepares them for transfer to the AI. You can choose one of three modes in "Settings":</p>
     <ul>
-        <li><b>RAG Mode (Recommended):</b> This mode is enabled by default (the "Use RAG" checkbox is checked). The program intelligently analyzes files by creating a brief summary for each and splitting the code into logical blocks (chunks). This allows the AI to focus on the most important information and provide more accurate answers.</li>
-        <li><b>Full File Mode:</b> If you disable RAG, the program will send the full content of the selected files to the model. This mode can be useful for very small files but has limitations.</li>
+        <li><b>Full File Mode</b> ("Use RAG" checkbox unchecked): The program transfers the full content of the selected files to the model. Useful for very small projects.</li>
+        <li><b>RAG Mode</b> ("Use RAG" checkbox checked, "Semantic Search" unchecked): The program creates brief descriptions (summaries) for each file and breaks the code into logical blocks (chunks). All summaries and all chunks that fit into the context window are sent to the AI context. This is the optimal mode for small and medium-sized projects.</li>
+        <li class="important"><b>RAG + Semantic Search Mode</b> (both checkboxes checked, <b>recommended for large projects</b>): This is the most advanced mode. The program also creates summaries and chunks. But when you ask a question, it first finds the most relevant code fragments (chunks) and sends only them to the AI context, accompanied by overviews of all files. This allows for efficient work with very large codebases.</li>
     </ul>
 
     <div class="important">
         <h3>Context Window Limitations</h3>
-        <p>Imagine the AI has a "short-term memory" (a context window) of a limited size. If you try to fit a very large project into it all at once, some information may be lost or ignored, leading to less accurate answers. This is why RAG mode is preferred.</p>
+        <p>Imagine that the AI has a "short-term memory" (context window) of limited size. If you try to fit too large a project into it entirely, some information may be lost or ignored, leading to less accurate answers. This is why RAG mode is preferred.</p>
         <p><b>Recommendation:</b> For very large projects, try not to analyze the entire repository. Use the "File Extensions" settings to select only the most relevant files for your task, or work with individual folders if your project is local.</p>
     </div>
 
     <h2>Main Interface Elements</h2>
     <ul>
-        <li><b>Projects Panel (Left):</b> A list of recent sessions. It can be collapsed with the <b>◀</b>/<b>▶</b> button. The saved project is loaded into the program by double-clicking.</li>
+        <li><b>Projects Panel (left):</b> A list of recent sessions. Collapses with the <b>◀</b>/<b>▶</b> button. A saved project is loaded into the program by double-clicking.</li>
         <li><b>"GitHub Repository" / "Local Folder" Tabs:</b> Select the source for analysis.</li>
         <li><b>Analyze / Cancel Analysis:</b> Buttons to start and stop the context preparation process.</li>
-        <li><b>View Analyzed Files (👁️):</b> Opens a window where you can see a list of all files and their short AI-generated summaries (only works in RAG mode).</li>
+        <li><b>Analysis Progress Bar:</b> Appears during analysis and shows its current progress.</li>
+        <li><b>View Analyzed Files (👁️):</b> Opens a window where you can see a list of all files and their brief descriptions (summaries) created by the AI (only works in RAG mode).</li>
         <li><b>Settings (collapsible panel):</b>
             <ul>
-                <li>Fields for entering and saving your access keys.</li>
-                <li>Selection of the AI model, token limits, and file extensions.</li>
-                <li>The RAG mode toggle switch.</li>
+                <li>Fields for entering and saving access keys.</li>
+                <li>AI model selection, token and file extension settings.</li>
+                <li>"Use RAG" and "Semantic Search" mode toggles.</li>
             </ul>
         </li>
         <div class="important">
-            <p><strong>Tip:</strong> If you encounter errors related to quotas ("quota exceeded") or temporary model unavailability, try changing the AI model in the settings. For example, switch from a more powerful version (like gemini-1.5-pro) to a faster one (like gemini-1.5-flash) or vice versa. This can sometimes help bypass temporary API-side restrictions.</p>
+            <p><strong>Tip:</strong> If you encounter errors related to quotas (quota exceeded) or temporary model unavailability, try changing the AI model in the settings. For example, switch from a more powerful version (gemini-1.5-pro) to a faster one (gemini-1.5-flash) or vice versa. Sometimes this helps bypass temporary API limitations.</p>
         </div>
         <li><b>Instructions:</b> A field for system instructions that will influence the AI's behavior in all its responses.</li>
         <li><b>Search in Dialogue:</b> Allows you to quickly find text in the current chat. Hotkeys: <span class="shortcut">F3</span> (Next), <span class="shortcut">Shift+F3</span> (Previous).</li>
+        <li><b>Hide/Show All:</b> A button next to the search that allows you to exclude all messages from the API context or bring them back with a single click.</li>
         <li><b>Dialogue Window:</b>
             <ul>
-                <li>The <code>🛇</code> / <code>👁</code> button to the right of a message allows you to exclude it from the context for subsequent requests, saving the AI's "memory".</li>
+                <li>The <code>🛇</code> / <code>👁</code> button to the right of a message allows you to exclude it from the context for subsequent requests, saving AI "memory".</li>
             </ul>
         </li>
-        <li><b>Request Input Field:</b> Use <span class="shortcut">Ctrl+Enter</span> to quickly send a message.</li>
+        <li><b>Query Input Field:</b> <span class="shortcut">Ctrl+Enter</span> for quick message sending.</li>
         <li><b>Send / Cancel:</b> Buttons to send a request to the AI or cancel it during execution.</li>
+        <li><b>Status Bar (bottom):</b> Displays information about the token limit and contains a <b>network indicator</b> (green - online, red - offline).</li>
     </ul>
 
     <h2>Menu</h2>
     <ul>
         <li><b>File:</b> Standard actions for managing sessions (New, Open, Save, Exit).</li>
-        <li><b>View:</b> Allows opening a window with the application logs for diagnostics.</li>
-        <li><b>Language:</b> Switch the interface language between English and Russian (requires a restart).</li>
+        <li><b>View:</b> Allows you to open the application logs window for diagnostics.</li>
+        <li><b>Language:</b> Switches the interface language between Russian and English (requires restart).</li>
         <li><b>Help:</b> Opens this window and information about the program.</li>
     </ul>
-    
+
     <h2>Sessions</h2>
     <p>
-        You can save and load your conversations. A session is a single file with the <code>.cpai</code> extension that stores the entire chat history, settings, and the analyzed project context. This makes it easy to pick up right where you left off.
+        You can save and load your dialogues. A session is a single file with the <code>.cpai</code> extension that stores the entire chat history, settings, and analyzed project context. This allows you to easily resume work from where you left off.
     </p>
 </body>
 </html>

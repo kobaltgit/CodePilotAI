@@ -27,118 +27,162 @@
 <context>
     <name>ChatModel</name>
     <message>
-        <location filename="../chat_model.py" line="249"/>
-        <location filename="../chat_model.py" line="258"/>
+        <location filename="../chat_model.py" line="183"/>
+        <location filename="../chat_model.py" line="189"/>
         <source>Загружен</source>
         <translation>Loaded</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="250"/>
-        <location filename="../chat_model.py" line="259"/>
+        <location filename="../chat_model.py" line="184"/>
+        <location filename="../chat_model.py" line="190"/>
         <source>Не найден!</source>
         <translation>Not found!</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="250"/>
+        <location filename="../chat_model.py" line="184"/>
         <source>Ключ API: {0}</source>
         <translation>API Key: {0}</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="259"/>
-        <location filename="../chat_model.py" line="328"/>
+        <location filename="../chat_model.py" line="190"/>
+        <location filename="../chat_model.py" line="252"/>
         <source>Токен GitHub: {0}</source>
         <translation>GitHub Token: {0}</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="283"/>
+        <location filename="../chat_model.py" line="212"/>
         <source>Ключ API: Отсутствует</source>
         <translation>API Key: Missing</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="284"/>
+        <location filename="../chat_model.py" line="213"/>
         <source>Ключ API Gemini отсутствует.</source>
         <translation>Gemini API key is missing.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="305"/>
+        <location filename="../chat_model.py" line="230"/>
         <source>Выбранная модель &apos;{0}&apos; недоступна. Установлена первая доступная: &apos;{1}&apos;.</source>
         <translation>Selected model &apos;{0}&apos; is unavailable. First available model set: &apos;{1}&apos;.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="306"/>
+        <location filename="../chat_model.py" line="231"/>
         <source>Модель &apos;{0}&apos; недоступна. Установлена: &apos;{1}&apos;.</source>
         <translation>Model &apos;{0}&apos; is unavailable. Set: &apos;{1}&apos;.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="308"/>
+        <location filename="../chat_model.py" line="233"/>
         <source>Нет доступных моделей Gemini.</source>
         <translation>No Gemini models available.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="311"/>
+        <location filename="../chat_model.py" line="236"/>
         <source>Ключ API: Загружен</source>
         <translation>API Key: Loaded</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="312"/>
+        <location filename="../chat_model.py" line="237"/>
         <source>API Gemini сконфигурирован.</source>
         <translation>Gemini API configured.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="315"/>
+        <location filename="../chat_model.py" line="240"/>
         <source>Ошибка конфигурации API Gemini или получения списка моделей: {0}</source>
         <translation>Error configuring Gemini API or getting model list: {0}</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="317"/>
+        <location filename="../chat_model.py" line="242"/>
         <source>Ключ API: Ошибка!</source>
         <translation>API Key: Error!</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="328"/>
+        <location filename="../chat_model.py" line="252"/>
         <source>Ошибка!</source>
         <translation>Error!</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="350"/>
-        <location filename="../chat_model.py" line="364"/>
+        <location filename="../chat_model.py" line="268"/>
+        <source>Поиск файлов для анализа...</source>
+        <translation>Searching for files to analyze...</translation>
+    </message>
+    <message>
+        <location filename="../chat_model.py" line="271"/>
+        <source>Не найдено подходящих файлов для анализа. Проверьте путь и выбранные расширения.</source>
+        <translation>No suitable files found for analysis. Check the path and selected extensions.</translation>
+    </message>
+    <message>
+        <location filename="../chat_model.py" line="321"/>
+        <source>Ключ API Gemini необходим для анализа в режиме RAG или семантического поиска.</source>
+        <translation>Gemini API key is required for RAG or semantic search analysis.</translation>
+    </message>
+    <message>
+        <location filename="../chat_model.py" line="441"/>
+        <source>Ошибка при подсчете токенов: {0}. Использование грубой оценки.</source>
+        <translation>Error counting tokens: {0}. Using rough estimate.</translation>
+    </message>
+    <message>
+        <location filename="../chat_model.py" line="445"/>
+        <source>Подготовка промпта...</source>
+        <translation>Preparing prompt...</translation>
+    </message>
+    <message>
+        <location filename="../chat_model.py" line="459"/>
+        <source>Системные инструкции слишком длинные.</source>
+        <translation>System instructions are too long.</translation>
+    </message>
+    <message>
+        <location filename="../chat_model.py" line="473"/>
+        <source>Контекст проекта частично урезан из-за лимита токенов.</source>
+        <translation>Project context partially truncated due to token limit.</translation>
+    </message>
+    <message>
+        <location filename="../chat_model.py" line="485"/>
+        <source>Часть истории чата исключена из-за лимита токенов.</source>
+        <translation>Part of chat history excluded due to token limit.</translation>
+    </message>
+    <message>
+        <location filename="../chat_model.py" line="493"/>
+        <source>Недостаточно места для вашего запроса. Попробуйте исключить сообщения из истории.</source>
+        <translation>Not enough space for your request. Try excluding messages from history.</translation>
+    </message>
+    <message>
+        <location filename="../chat_model.py" line="621"/>
+        <source>Часть контекста урезана из-за лимита токенов.</source>
+        <translation>Part of the context was truncated due to the token limit.</translation>
+    </message>
+    <message>
         <source>Сбор файлов для анализа...</source>
-        <translation>Collecting files for analysis...</translation>
+        <translation type="vanished">Collecting files for analysis...</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="353"/>
-        <location filename="../chat_model.py" line="367"/>
         <source>Не найдено подходящих файлов для анализа в указанном источнике.</source>
-        <translation>No suitable files found for analysis in the specified source.</translation>
+        <translation type="vanished">No suitable files found for analysis in the specified source.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="358"/>
-        <location filename="../chat_model.py" line="372"/>
+        <location filename="../chat_model.py" line="275"/>
         <source>Начат анализ {0} файлов...</source>
         <translation>Analysis of {0} files started...</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="403"/>
         <source>Ключ API Gemini необходим для анализа в режиме RAG.</source>
-        <translation>Gemini API key is required for RAG analysis.</translation>
+        <translation type="vanished">Gemini API key is required for RAG analysis.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="405"/>
+        <location filename="../chat_model.py" line="323"/>
         <source>Токен GitHub не загружен.</source>
         <translation>GitHub token not loaded.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="406"/>
+        <location filename="../chat_model.py" line="324"/>
         <source>Репозиторий или ветка не выбраны.</source>
         <translation>Repository or branch not selected.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="408"/>
+        <location filename="../chat_model.py" line="326"/>
         <source>Выбрана некорректная локальная папка.</source>
         <translation>Incorrect local folder selected.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="410"/>
+        <location filename="../chat_model.py" line="328"/>
         <source>Тип проекта не определен.</source>
         <translation>Project type not defined.</translation>
     </message>
@@ -147,144 +191,123 @@
         <translation type="vanished">Failed to read local file {0}: {1}</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="490"/>
+        <location filename="../chat_model.py" line="373"/>
         <source>Анализ проекта завершен.</source>
         <translation>Project analysis complete.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="513"/>
         <source>Формирование промпта...</source>
-        <translation>Generating prompt...</translation>
+        <translation type="vanished">Generating prompt...</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="522"/>
+        <location filename="../chat_model.py" line="393"/>
         <source>Отправка запроса ({0} т.)...</source>
         <translation>Sending request ({0} t.)...</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="557"/>
+        <location filename="../chat_model.py" line="411"/>
         <source>Ключ API не загружен.</source>
         <translation>API key not loaded.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="572"/>
         <source>Ошибка инициализации временной модели для подсчета токенов: {0}</source>
-        <translation>Error initializing temporary model for token counting: {0}</translation>
+        <translation type="vanished">Error initializing temporary model for token counting: {0}</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="573"/>
         <source>Ошибка подготовки промпта: не удалось инициализировать модель для подсчета токенов.</source>
-        <translation>Prompt preparation error: failed to initialize model for token counting.</translation>
+        <translation type="vanished">Prompt preparation error: failed to initialize model for token counting.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="601"/>
         <source>Внутренняя ошибка: роли не чередуются для подсчета токенов. Грубая оценка.</source>
-        <translation>Internal error: roles do not alternate for token counting. Rough estimate.</translation>
+        <translation type="vanished">Internal error: roles do not alternate for token counting. Rough estimate.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="606"/>
         <source>Ошибка InvalidArgument при подсчете токенов: {0}. Использование грубой оценки.</source>
-        <translation>InvalidArgument error during token counting: {0}. Using rough estimate.</translation>
+        <translation type="vanished">InvalidArgument error during token counting: {0}. Using rough estimate.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="609"/>
         <source>Ошибка подсчета токенов: {0}. Использование грубой оценки.</source>
-        <translation>Token counting error: {0}. Using rough estimate.</translation>
+        <translation type="vanished">Token counting error: {0}. Using rough estimate.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="625"/>
+        <location filename="../chat_model.py" line="457"/>
         <source>OK. Я готов к работе.</source>
         <translation>OK. I&apos;m ready to work.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="627"/>
         <source>Ошибка: Не удалось подсчитать токены для системных инструкций.</source>
-        <translation>Error: Failed to count tokens for system instructions.</translation>
+        <translation type="vanished">Error: Failed to count tokens for system instructions.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="634"/>
         <source>Системные инструкции слишком длинные и не помещаются в контекст.</source>
-        <translation>System instructions are too long and do not fit into context.</translation>
+        <translation type="vanished">System instructions are too long and do not fit into context.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="642"/>
+        <location filename="../chat_model.py" line="466"/>
         <source>**Контекст из файлов проекта:**
 {0}</source>
         <translation>**Project file context:**
 {0}</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="645"/>
+        <location filename="../chat_model.py" line="469"/>
         <source>OK. Контекст получен.</source>
         <translation>OK. Context received.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="647"/>
         <source>Ошибка: Не удалось подсчитать токены для контекста проекта. Контекст пропущен.</source>
-        <translation>Error: Failed to count tokens for project context. Context skipped.</translation>
+        <translation type="vanished">Error: Failed to count tokens for project context. Context skipped.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="648"/>
         <source>Ошибка подсчета токенов для контекста. Контекст проекта пропущен.</source>
-        <translation>Token counting error for context. Project context skipped.</translation>
+        <translation type="vanished">Token counting error for context. Project context skipped.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="653"/>
         <source>Контекст проекта частично исключен из-за превышения лимита токенов.</source>
-        <translation>Project context partially excluded due to token limit exceedance.</translation>
+        <translation type="vanished">Project context partially excluded due to token limit exceedance.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="671"/>
         <source>Ошибка: Не удалось подсчитать токены для сообщения истории. Сообщение пропущено.</source>
-        <translation>Error: Failed to count tokens for history message. Message skipped.</translation>
+        <translation type="vanished">Error: Failed to count tokens for history message. Message skipped.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="672"/>
         <source>Ошибка подсчета токенов для истории. Некоторые сообщения могут быть пропущены.</source>
-        <translation>Token counting error for history. Some messages may be skipped.</translation>
+        <translation type="vanished">Token counting error for history. Some messages may be skipped.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="678"/>
         <source>Часть истории чата исключена из-за превышения лимита токенов.</source>
-        <translation>Part of chat history excluded due to token limit exceedance.</translation>
+        <translation type="vanished">Part of chat history excluded due to token limit exceedance.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="687"/>
         <source>Ошибка подсчета токенов для вашего запроса. Возможно, запрос слишком большой или внутренняя ошибка.</source>
-        <translation>Token counting error for your request. The request may be too large or an internal error occurred.</translation>
+        <translation type="vanished">Token counting error for your request. The request may be too large or an internal error occurred.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="693"/>
         <source>Промпт превышает лимит токенов: текущий={0}, последний_запрос={1}, бюджет={2}</source>
-        <translation>Prompt exceeds token limit: current={0}, last_request={1}, budget={2}</translation>
+        <translation type="vanished">Prompt exceeds token limit: current={0}, last_request={1}, budget={2}</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="694"/>
         <source>Недостаточно места для вашего запроса в контекстном окне. Попробуйте исключить сообщения из истории или уменьшить инструкции.</source>
-        <translation>Not enough space for your request in the context window. Try excluding messages from history or reducing instructions.</translation>
+        <translation type="vanished">Not enough space for your request in the context window. Try excluding messages from history or reducing instructions.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="715"/>
         <source>Очистка промпта: Замена предыдущего USER на текущий: {0}...</source>
-        <translation>Prompt cleanup: Replacing previous USER with current: {0}...</translation>
+        <translation type="vanished">Prompt cleanup: Replacing previous USER with current: {0}...</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="719"/>
         <source>Очистка промпта: Пропуск дублирующегося MODEL: {0}...</source>
-        <translation>Prompt cleanup: Skipping duplicate MODEL: {0}...</translation>
+        <translation type="vanished">Prompt cleanup: Skipping duplicate MODEL: {0}...</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="728"/>
         <source>Не удалось сформировать промпт. Возможно, слишком большой объем данных или внутренняя ошибка.</source>
-        <translation>Failed to form prompt. Possibly too much data or an internal error.</translation>
+        <translation type="vanished">Failed to form prompt. Possibly too much data or an internal error.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="738"/>
         <source>Финальная ошибка подсчета токенов для очищенного промпта: {0}. Использование грубой оценки.</source>
-        <translation>Final token counting error for cleaned prompt: {0}. Using rough estimate.</translation>
+        <translation type="vanished">Final token counting error for cleaned prompt: {0}. Using rough estimate.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="760"/>
+        <location filename="../chat_model.py" line="531"/>
         <source>Ты — мой ассистент по программированию и другим направлениям, это зависит от контекста. Анализируй предоставленный контекст и отвечай на вопросы. Отвечай {0}, если не указано иное. При ответе всегда используй Pygments для подсветки кода.</source>
         <translation>You are my assistant for programming and other areas, depending on the context. Analyze the provided context and answer questions. Answer {0} unless otherwise specified. Always use Pygments for code highlighting in your answers.</translation>
     </message>
@@ -293,31 +316,51 @@
         <translation type="vanished">You are my programming assistant. Analyze the provided context and answer questions. Answer {0} unless otherwise specified. Always use Pygments for code highlighting in your answers.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="766"/>
+        <location filename="../chat_model.py" line="536"/>
         <source>Ты — полезный и разносторонний ассистент. Отвечай на вопросы четко и по делу. Отвечай {0}, если не указано иное.</source>
         <translation>You are a helpful and versatile assistant. Answer questions clearly and to the point. Answer {0} unless otherwise specified.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="771"/>
+        <location filename="../chat_model.py" line="540"/>
         <source>Дополнительные инструкции:</source>
         <translation>Additional instructions:</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="797"/>
+        <location filename="../chat_model.py" line="560"/>
+        <source>Выполняется семантический поиск релевантных фрагментов...</source>
+        <translation>Performing semantic search for relevant fragments...</translation>
+    </message>
+    <message>
+        <location filename="../chat_model.py" line="581"/>
+        <source>Найдено {0} релевантных фрагментов кода.</source>
+        <translation>Found {0} relevant code fragments.</translation>
+    </message>
+    <message>
+        <location filename="../chat_model.py" line="584"/>
+        <source>Ошибка семантического поиска: {0}</source>
+        <translation>Semantic search error: {0}</translation>
+    </message>
+    <message>
+        <location filename="../chat_model.py" line="590"/>
+        <source>Добавление всех фрагментов кода в контекст...</source>
+        <translation>Adding all code fragments to context...</translation>
+    </message>
+    <message>
+        <location filename="../chat_model.py" line="604"/>
         <source>--- Обзор файла: {0} ---
 </source>
         <translation>--- File overview: {0} ---
 </translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="800"/>
+        <location filename="../chat_model.py" line="613"/>
         <source>--- Фрагмент ({0}) из файла: {1} ---
 </source>
         <translation>--- Fragment ({0}) from file: {1} ---
 </translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="807"/>
+        <location filename="../chat_model.py" line="615"/>
         <source>--- Содержимое файла: {0} ---
 </source>
         <translation>--- File content: {0} ---
@@ -346,17 +389,15 @@
         </translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="816"/>
         <source>Часть контекста проекта не поместилась в окно токенов и была обрезана.</source>
-        <translation>Part of the project context did not fit into the token window and was truncated.</translation>
+        <translation type="vanished">Part of the project context did not fit into the token window and was truncated.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="817"/>
         <source>Внимание: Контекст проекта был урезан, так как превышает лимит токенов.</source>
-        <translation>Warning: Project context was truncated as it exceeds the token limit.</translation>
+        <translation type="vanished">Warning: Project context was truncated as it exceeds the token limit.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="856"/>
+        <location filename="../chat_model.py" line="659"/>
         <source>Не удалось получить репозиторий. Проверьте URL или токен GitHub.</source>
         <translation>Failed to retrieve repository. Check URL or GitHub token.</translation>
     </message>
@@ -365,7 +406,7 @@
         <translation type="vanished">{0} cannot be empty.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="269"/>
+        <location filename="../chat_model.py" line="199"/>
         <source>{0} успешно сохранен.</source>
         <translation>{0} saved successfully.</translation>
     </message>
@@ -374,7 +415,7 @@
         <translation type="vanished">Error saving {0}.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="271"/>
+        <location filename="../chat_model.py" line="201"/>
         <source>Ошибка сохранения: {0}</source>
         <translation>Save error: {0}</translation>
     </message>
@@ -403,7 +444,7 @@
         <translation type="vanished">Not all components are ready for analysis (repository, branch, Gemini model).</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="343"/>
+        <location filename="../chat_model.py" line="263"/>
         <source>Анализ уже запущен.</source>
         <translation>Analysis is already running.</translation>
     </message>
@@ -424,7 +465,7 @@
         <translation type="vanished">Starting analysis of {0} files in &apos;{1}&apos;...</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="472"/>
+        <location filename="../chat_model.py" line="358"/>
         <source>Отмена анализа...</source>
         <translation>Canceling analysis...</translation>
     </message>
@@ -437,7 +478,7 @@
         <translation type="vanished">Repository analysis complete.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="507"/>
+        <location filename="../chat_model.py" line="382"/>
         <source>Введите ваш запрос.</source>
         <translation>Enter your query.</translation>
     </message>
@@ -458,7 +499,7 @@
         <translation type="vanished">Error: Failed to form the request. Data volume is too large.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="555"/>
+        <location filename="../chat_model.py" line="409"/>
         <source>Дождитесь завершения предыдущего запроса.</source>
         <translation>Please wait for the previous request to complete.</translation>
     </message>
@@ -493,7 +534,7 @@
 </translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="751"/>
+        <location filename="../chat_model.py" line="525"/>
         <source>на русском языке</source>
         <translation>in Russian</translation>
     </message>
@@ -622,7 +663,7 @@ Now, please answer my original question using this new information.
       </translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="846"/>
+        <location filename="../chat_model.py" line="649"/>
         <source>GitHub не инициализирован.</source>
         <translation>GitHub is not initialized.</translation>
     </message>
@@ -643,12 +684,12 @@ Now, please answer my original question using this new information.
         <translation type="vanished">Branch selected: {0}. Re-analysis is required.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="932"/>
+        <location filename="../chat_model.py" line="723"/>
         <source>Новая сессия создана.</source>
         <translation>New session created.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="937"/>
+        <location filename="../chat_model.py" line="728"/>
         <source>Не удалось загрузить сессию: {0}</source>
         <translation>Failed to load session: {0}</translation>
     </message>
@@ -661,17 +702,17 @@ Now, please answer my original question using this new information.
         <translation type="vanished">Warning: Failed to access repository &apos;{0}&apos;.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="973"/>
+        <location filename="../chat_model.py" line="759"/>
         <source>Сессия &apos;{0}&apos; загружена.</source>
         <translation>Session &apos;{0}&apos; loaded.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="991"/>
+        <location filename="../chat_model.py" line="777"/>
         <source>Сессия сохранена.</source>
         <translation>Session saved.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="993"/>
+        <location filename="../chat_model.py" line="779"/>
         <source>Не удалось сохранить сессию: {0}</source>
         <translation>Failed to save session: {0}</translation>
     </message>
@@ -826,12 +867,12 @@ Your tasks:
         <translation type="vanished">Unknown</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="95"/>
+        <location filename="../chat_model.py" line="91"/>
         <source>Генерация прервана. Причина: {0}</source>
         <translation>Generation interrupted. Reason: {0}</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="101"/>
+        <location filename="../chat_model.py" line="97"/>
         <source>Ошибка API Gemini: {0} - {1}</source>
         <translation>Gemini API Error: {0} - {1}</translation>
     </message>
@@ -1153,7 +1194,7 @@ Your tasks:
     </message>
     <message>
         <location filename="../main.py" line="298"/>
-        <location filename="../main.py" line="719"/>
+        <location filename="../main.py" line="744"/>
         <source>Развернуть настройки ▼</source>
         <translation>Expand Settings ▼</translation>
     </message>
@@ -1201,12 +1242,12 @@ Your tasks:
         <translation>Max Response Tokens:</translation>
     </message>
     <message>
-        <location filename="../main.py" line="333"/>
+        <location filename="../main.py" line="348"/>
         <source>Расширения файлов для анализа:</source>
         <translation>File Extensions to Analyze:</translation>
     </message>
     <message>
-        <location filename="../main.py" line="341"/>
+        <location filename="../main.py" line="356"/>
         <source>Другие:</source>
         <translation>Other:</translation>
     </message>
@@ -1215,8 +1256,8 @@ Your tasks:
         <translation type="vanished">.log .csv .xml ...</translation>
     </message>
     <message>
-        <location filename="../main.py" line="350"/>
-        <location filename="../main.py" line="721"/>
+        <location filename="../main.py" line="365"/>
+        <location filename="../main.py" line="746"/>
         <source>Свернуть инструкции ▲</source>
         <translation>Collapse Instructions ▲</translation>
     </message>
@@ -1225,12 +1266,12 @@ Your tasks:
         <translation type="vanished">System Instructions (optional)...</translation>
     </message>
     <message>
-        <location filename="../main.py" line="357"/>
+        <location filename="../main.py" line="372"/>
         <source>Шаблон:</source>
         <translation>Template:</translation>
     </message>
     <message>
-        <location filename="../main.py" line="357"/>
+        <location filename="../main.py" line="372"/>
         <source>Управлять...</source>
         <translation>Manage...</translation>
     </message>
@@ -1239,47 +1280,47 @@ Your tasks:
         <translation type="vanished">Enter your query (Enter for new line, Ctrl+Enter to send)...</translation>
     </message>
     <message>
-        <location filename="../main.py" line="392"/>
+        <location filename="../main.py" line="407"/>
         <source>Отмена</source>
         <translation>Cancel</translation>
     </message>
     <message>
-        <location filename="../main.py" line="393"/>
+        <location filename="../main.py" line="408"/>
         <source>Отправить Ctrl ↵</source>
         <translation>Send Ctrl ↵</translation>
     </message>
     <message>
-        <location filename="../main.py" line="411"/>
+        <location filename="../main.py" line="426"/>
         <source>&amp;Файл</source>
         <translation>&amp;File</translation>
     </message>
     <message>
-        <location filename="../main.py" line="413"/>
+        <location filename="../main.py" line="428"/>
         <source>&amp;Новая сессия</source>
         <translation>&amp;New Session</translation>
     </message>
     <message>
-        <location filename="../main.py" line="414"/>
+        <location filename="../main.py" line="429"/>
         <source>&amp;Открыть сессию...</source>
         <translation>&amp;Open Session...</translation>
     </message>
     <message>
-        <location filename="../main.py" line="415"/>
+        <location filename="../main.py" line="430"/>
         <source>&amp;Сохранить сессию</source>
         <translation>&amp;Save Session</translation>
     </message>
     <message>
-        <location filename="../main.py" line="416"/>
+        <location filename="../main.py" line="431"/>
         <source>Сохранить сессию &amp;как...</source>
         <translation>Save Session &amp;As...</translation>
     </message>
     <message>
-        <location filename="../main.py" line="420"/>
+        <location filename="../main.py" line="435"/>
         <source>&amp;Выход</source>
         <translation>&amp;Exit</translation>
     </message>
     <message>
-        <location filename="../main.py" line="437"/>
+        <location filename="../main.py" line="452"/>
         <source>&amp;Справка</source>
         <translation>&amp;Help</translation>
     </message>
@@ -1288,12 +1329,12 @@ Your tasks:
         <translation type="vanished">Help Contents...</translation>
     </message>
     <message>
-        <location filename="../main.py" line="439"/>
+        <location filename="../main.py" line="454"/>
         <source>О программе...</source>
         <translation>About...</translation>
     </message>
     <message>
-        <location filename="../main.py" line="433"/>
+        <location filename="../main.py" line="448"/>
         <source>&amp;Вид</source>
         <translation>&amp;View</translation>
     </message>
@@ -1304,7 +1345,7 @@ Your tasks:
     </message>
     <message>
         <location filename="../main.py" line="213"/>
-        <location filename="../main.py" line="920"/>
+        <location filename="../main.py" line="945"/>
         <source>Свернуть панель проектов</source>
         <translation>Collapse Projects Panel</translation>
     </message>
@@ -1320,7 +1361,7 @@ Your tasks:
     </message>
     <message>
         <location filename="../main.py" line="256"/>
-        <location filename="../main.py" line="624"/>
+        <location filename="../main.py" line="641"/>
         <source>GitHub Репозиторий</source>
         <translation>GitHub Repository</translation>
     </message>
@@ -1356,125 +1397,137 @@ Your tasks:
         <translation>Save</translation>
     </message>
     <message>
-        <location filename="../main.py" line="325"/>
+        <location filename="../main.py" line="335"/>
         <source>Исп. RAG (чанки)</source>
         <translation>Use RAG (chunks)</translation>
     </message>
     <message>
-        <location filename="../main.py" line="326"/>
+        <location filename="../main.py" line="336"/>
         <source>Если включено, файлы будут разбиваться на чанки и саммари.
 Если выключено, файлы будут использоваться целиком.</source>
         <translation>If enabled, files will be split into chunks and summaries.
 If disabled, files will be used in their entirety.</translation>
     </message>
     <message>
-        <location filename="../main.py" line="355"/>
+        <location filename="../main.py" line="338"/>
+        <source>Семантический поиск</source>
+        <translation>Semantic Search</translation>
+    </message>
+    <message>
+        <location filename="../main.py" line="339"/>
+        <source>Если включено, в контекст будут попадать только
+наиболее релевантные вопросу фрагменты кода.</source>
+        <translation>If enabled, only code fragments most relevant to the question
+will be included in the context.</translation>
+    </message>
+    <message>
+        <location filename="../main.py" line="370"/>
         <source>Системные инструкции...</source>
         <translation>System instructions...</translation>
     </message>
     <message>
-        <location filename="../main.py" line="367"/>
+        <location filename="../main.py" line="382"/>
         <source>Найти в диалоге...</source>
         <translation>Find in dialog...</translation>
     </message>
     <message>
-        <location filename="../main.py" line="368"/>
+        <location filename="../main.py" line="383"/>
         <source>Назад</source>
         <translation>Previous</translation>
     </message>
     <message>
-        <location filename="../main.py" line="370"/>
+        <location filename="../main.py" line="385"/>
         <source>Далее</source>
         <translation>Next</translation>
     </message>
     <message>
-        <location filename="../main.py" line="374"/>
+        <location filename="../main.py" line="389"/>
         <source>Сбросить поиск</source>
         <translation>Reset search</translation>
     </message>
     <message>
-        <location filename="../main.py" line="377"/>
+        <location filename="../main.py" line="392"/>
         <source>Скрыть все сообщения из контекста API или показать их обратно</source>
         <translation>Hide all messages from API context or show them back</translation>
     </message>
     <message>
-        <location filename="../main.py" line="379"/>
+        <location filename="../main.py" line="394"/>
         <source>Поиск:</source>
         <translation>Search:</translation>
     </message>
     <message>
-        <location filename="../main.py" line="389"/>
+        <location filename="../main.py" line="404"/>
         <source>Введите запрос (Ctrl+Enter для отправки)...</source>
         <translation>Enter query (Ctrl+Enter to send)...</translation>
     </message>
     <message>
-        <location filename="../main.py" line="418"/>
+        <location filename="../main.py" line="433"/>
         <source>Очистить список недавних проектов</source>
         <translation>Clear recent projects list</translation>
     </message>
     <message>
-        <location filename="../main.py" line="434"/>
+        <location filename="../main.py" line="449"/>
         <source>Показать &amp;Логи</source>
         <translation>Show &amp;Logs</translation>
     </message>
     <message>
-        <location filename="../main.py" line="438"/>
+        <location filename="../main.py" line="453"/>
         <source>Содержание...</source>
         <translation>Contents...</translation>
     </message>
     <message>
-        <location filename="../main.py" line="444"/>
+        <location filename="../main.py" line="459"/>
         <source>&amp;Язык</source>
         <translation>&amp;Language</translation>
     </message>
     <message>
-        <location filename="../main.py" line="448"/>
+        <location filename="../main.py" line="463"/>
         <source>Русский</source>
         <translation>Russian</translation>
     </message>
     <message>
-        <location filename="../main.py" line="454"/>
+        <location filename="../main.py" line="469"/>
         <source>English</source>
         <translation>English</translation>
     </message>
     <message>
-        <location filename="../main.py" line="470"/>
+        <location filename="../main.py" line="485"/>
         <source>Смена языка</source>
         <translation>Change Language</translation>
     </message>
     <message>
-        <location filename="../main.py" line="470"/>
+        <location filename="../main.py" line="485"/>
         <source>Язык будет изменен после перезапуска приложения.</source>
         <translation>The language will be changed after the application restarts.</translation>
     </message>
     <message>
-        <location filename="../main.py" line="472"/>
+        <location filename="../main.py" line="487"/>
         <source>Ошибка сохранения</source>
         <translation>Save Error</translation>
     </message>
     <message>
-        <location filename="../main.py" line="472"/>
+        <location filename="../main.py" line="487"/>
         <source>Не удалось сохранить настройку языка: {0}</source>
         <translation>Failed to save language setting: {0}</translation>
     </message>
     <message>
-        <location filename="../main.py" line="616"/>
+        <location filename="../main.py" line="633"/>
         <source>Сеть доступна</source>
         <translation>Network Available</translation>
     </message>
     <message>
-        <location filename="../main.py" line="619"/>
+        <location filename="../main.py" line="636"/>
         <source>Нет подключения к сети</source>
         <translation>No network connection</translation>
     </message>
     <message>
-        <location filename="../main.py" line="652"/>
+        <location filename="../main.py" line="669"/>
         <source>открытием проекта &apos;{0}&apos;</source>
         <translation>opening project &apos;{0}&apos;</translation>
     </message>
     <message>
-        <location filename="../main.py" line="753"/>
-        <location filename="../main.py" line="916"/>
+        <location filename="../main.py" line="778"/>
+        <location filename="../main.py" line="941"/>
         <source>Развернуть панель проектов</source>
         <translation>Expand Projects Panel</translation>
     </message>
@@ -1487,12 +1540,12 @@ If disabled, files will be used in their entirety.</translation>
         <translation type="vanished">&lt;b&gt;{0} v2.1&lt;/b&gt;&lt;br&gt;...</translation>
     </message>
     <message>
-        <location filename="../main.py" line="719"/>
+        <location filename="../main.py" line="744"/>
         <source>Свернуть настройки ▲</source>
         <translation>Collapse Settings ▲</translation>
     </message>
     <message>
-        <location filename="../main.py" line="721"/>
+        <location filename="../main.py" line="746"/>
         <source>Развернуть инструкции ▼</source>
         <translation>Expand Instructions ▼</translation>
     </message>
@@ -1553,17 +1606,17 @@ If disabled, files will be used in their entirety.</translation>
         <translation type="vanished">Template management component not loaded.</translation>
     </message>
     <message>
-        <location filename="../main.py" line="797"/>
+        <location filename="../main.py" line="822"/>
         <source>выходом из приложения</source>
         <translation>exiting the application</translation>
     </message>
     <message>
-        <location filename="../main.py" line="807"/>
+        <location filename="../main.py" line="832"/>
         <source>Несохраненные изменения</source>
         <translation>Unsaved Changes</translation>
     </message>
     <message>
-        <location filename="../main.py" line="807"/>
+        <location filename="../main.py" line="832"/>
         <source>Имеются несохраненные изменения.
 Сохранить их перед {0}?</source>
         <translation>There are unsaved changes.

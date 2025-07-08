@@ -322,12 +322,27 @@ class MainWindow(QMainWindow):
         self.model_name_combobox = QComboBox(); self.model_name_combobox.setEditable(True)
         max_tokens_label = QLabel(self.tr("Макс. токенов ответа:"))
         self.max_tokens_spinbox = QSpinBox(); self.max_tokens_spinbox.setRange(256, 131072); self.max_tokens_spinbox.setSingleStep(1024)
+
+        model_settings_layout.addWidget(model_name_label)
+        model_settings_layout.addWidget(self.model_name_combobox, 1)
+        model_settings_layout.addWidget(max_tokens_label)
+        model_settings_layout.addWidget(self.max_tokens_spinbox)
+        model_settings_layout.addStretch(1)
+        settings_inner_layout.addLayout(model_settings_layout)
+
+        # Настройки RAG и семантического поиска
+        rag_layout = QHBoxLayout()
         self.rag_enabled_checkbox = QCheckBox(self.tr("Исп. RAG (чанки)"))
         self.rag_enabled_checkbox.setToolTip(self.tr("Если включено, файлы будут разбиваться на чанки и саммари.\nЕсли выключено, файлы будут использоваться целиком."))
-        model_settings_layout.addWidget(model_name_label); model_settings_layout.addWidget(self.model_name_combobox, 1);
-        model_settings_layout.addWidget(max_tokens_label); model_settings_layout.addWidget(self.max_tokens_spinbox)
-        model_settings_layout.addSpacing(20); model_settings_layout.addWidget(self.rag_enabled_checkbox)
-        settings_inner_layout.addLayout(model_settings_layout)
+
+        self.semantic_search_checkbox = QCheckBox(self.tr("Семантический поиск"))
+        self.semantic_search_checkbox.setToolTip(self.tr("Если включено, в контекст будут попадать только\nнаиболее релевантные вопросу фрагменты кода."))
+
+        rag_layout.addWidget(self.rag_enabled_checkbox)
+        rag_layout.addSpacing(20)
+        rag_layout.addWidget(self.semantic_search_checkbox)
+        rag_layout.addStretch(1)
+        settings_inner_layout.addLayout(rag_layout)
 
         # Расширения
         extensions_group_label = QLabel(self.tr("Расширения файлов для анализа:"))
@@ -492,7 +507,8 @@ class MainWindow(QMainWindow):
         # Настройки
         self.model_name_combobox.currentTextChanged.connect(self.view_model.updateModelName)
         self.max_tokens_spinbox.valueChanged.connect(self.view_model.updateMaxTokens)
-        self.rag_enabled_checkbox.stateChanged.connect(lambda state: self.view_model.updateRagEnabled(bool(state))) # Убедитесь, что 'state' - это int (0,1,2)
+        self.rag_enabled_checkbox.stateChanged.connect(lambda state: self.view_model.updateRagEnabled(state == Qt.CheckState.Checked.value))
+        self.semantic_search_checkbox.stateChanged.connect(lambda state: self.view_model.updateSemanticSearchEnabled(state == Qt.CheckState.Checked.value))
         self.instructions_textedit.textChanged.connect(self._on_instructions_changed)
         for checkbox in self.common_ext_checkboxes.values(): checkbox.stateChanged.connect(self._on_extensions_changed)
         self.custom_ext_lineedit.editingFinished.connect(self._on_extensions_changed)
@@ -527,6 +543,7 @@ class MainWindow(QMainWindow):
         self.view_model.maxTokensChanged.connect(self._update_settings_fields)
         self.view_model.instructionsTextChanged.connect(self._update_settings_fields)
         self.view_model.ragEnabledChanged.connect(self._update_settings_fields)
+        self.view_model.semanticSearchEnabledChanged.connect(self._update_settings_fields)
         self.view_model.projectTypeChanged.connect(self._update_project_fields)
         self.view_model.repoUrlChanged.connect(self._update_project_fields)
         self.view_model.localPathChanged.connect(self._update_project_fields)
@@ -709,8 +726,16 @@ class MainWindow(QMainWindow):
     def _update_settings_fields(self):
         self.model_name_combobox.setCurrentText(self.view_model.modelName)
         self.max_tokens_spinbox.setValue(self.view_model.maxTokens)
-        self.rag_enabled_checkbox.setChecked(self.view_model.ragEnabled)
-        if self.instructions_textedit.toPlainText() != self.view_model.instructionsText: self.instructions_textedit.setPlainText(self.view_model.instructionsText)
+
+        is_rag_enabled = self.view_model.ragEnabled
+        self.rag_enabled_checkbox.setChecked(is_rag_enabled)
+
+        # Управляем доступностью и состоянием чекбокса семантического поиска
+        self.semantic_search_checkbox.setEnabled(is_rag_enabled)
+        self.semantic_search_checkbox.setChecked(is_rag_enabled and self.view_model.semanticSearchEnabled)
+
+        if self.instructions_textedit.toPlainText() != self.view_model.instructionsText:
+            self.instructions_textedit.setPlainText(self.view_model.instructionsText)
     @Slot(set, str)
     def _update_extensions_ui(self, checked_set, custom_text):
         for ext, cb in self.common_ext_checkboxes.items(): cb.setChecked(ext in checked_set)

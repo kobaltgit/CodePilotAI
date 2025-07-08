@@ -59,6 +59,7 @@ class ChatViewModel(QObject):
     availableModelsChanged = Signal(list)
     maxTokensChanged = Signal()
     ragEnabledChanged = Signal(bool)
+    semanticSearchEnabledChanged = Signal(bool)
     instructionsTextChanged = Signal()
     checkedExtensionsChanged = Signal(set, str)
 
@@ -206,6 +207,8 @@ class ChatViewModel(QObject):
     def instructionsText(self) -> str: return self._model.get_instructions()
     @Property(bool, notify=ragEnabledChanged)
     def ragEnabled(self) -> bool: return self._model.get_rag_enabled()
+    @Property(bool, notify=semanticSearchEnabledChanged)
+    def semanticSearchEnabled(self) -> bool: return self._model.get_semantic_search_enabled()
 
     # --- Общие свойства ---
     @Property(bool, notify=isDirtyChanged)
@@ -349,6 +352,8 @@ class ChatViewModel(QObject):
     def updateInstructions(self, text: str): self._model.set_instructions(text)
     @Slot(bool)
     def updateRagEnabled(self, enabled: bool): self._model.set_rag_enabled(enabled)
+    @Slot(bool)
+    def updateSemanticSearchEnabled(self, enabled: bool): self._model.set_semantic_search_enabled(enabled)
     @Slot(set, str)
     def updateExtensionsFromUi(self, checked_common_set: Set[str], custom_text: str):
         custom_set = {f".{part.lstrip('.')}" for part in re.split(r"[\s,]+", custom_text.strip()) if part.strip() and part != '.'}
@@ -508,6 +513,7 @@ class ChatViewModel(QObject):
         self.maxTokensChanged.emit()
         self.instructionsTextChanged.emit()
         self.ragEnabledChanged.emit(self.ragEnabled)
+        self.semanticSearchEnabledChanged.emit(self.semanticSearchEnabled)
         self.availableModelsChanged.emit(self._model.get_available_models())
         self._parse_and_emit_extensions()
         self._update_all_button_states()

@@ -6,6 +6,8 @@ import datetime
 import json
 import logging
 from typing import Optional, Dict, List, Tuple, Any
+from io import BytesIO
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +50,7 @@ CREATE TABLE IF NOT EXISTS context_data (
     type TEXT NOT NULL CHECK(type IN ('summary', 'chunk', 'full_file')), -- Тип контента
     chunk_num INTEGER, -- Порядковый номер чанка (для type='chunk')
     content TEXT NOT NULL,
+    embedding BLOB, -- Векторное представление чанка (для type='chunk' и семантического поиска)
     UNIQUE(file_path, type, chunk_num)
 );
 
@@ -137,18 +140,32 @@ def load_session_data(
                 for row in messages_cursor.fetchall()
             ]
 
-            # Загружаем все данные из новой таблицы context_data
-            context_cursor = conn.execute("SELECT file_path, type, chunk_num, content FROM context_data ORDER BY file_path, chunk_num ASC")
+            # Загружаем все данные из новой таблицы context_data>
+            context_cursor = conn.execute("SELECT file_path, type, chunk_num, content, embedding FROM context_data ORDER BY file_path, chunk_num ASC")
             context_data_list = []
             for row in context_cursor.fetchall():
                 item = dict(row)
-                # Ensure chunk_num is int for compatibility, even if DB stores it as float/text for some reason
+
+                # Десериализация эмбеддинга
+                if 'embedding' in item and item['embedding'] is not None:
+                    try:
+                        buffer = BytesIO(item['embedding'])
+                        item['embedding'] = np.load(buffer)
+                    except Exception as e:
+                        logger.warning(f"Не удалось десериализовать эмбеддинг для '{item.get('file_path')}': {e}. Эмбеддинг будет проигнорирован.")
+                        item['embedding'] = None
+                else:
+                    item['embedding'] = None # Гарантируем, что ключ есть, но он None
+
+                # Ensure chunk_num is int for compatibility
                 if 'chunk_num' in item and item['chunk_num'] is not None:
                     try:
                         item['chunk_num'] = int(item['chunk_num'])
                     except (ValueError, TypeError):
-                        item['chunk_num'] = 0 # Default if conversion fails
+                        item['chunk_num'] = 0
+
                 context_data_list.append(item)
+
 
         logger.info(f"Сессия загружена. Метаданные: {len(metadata)} полей, Сообщений: {len(messages_list)}, Элементов контекста: {len(context_data_list)}")
         return metadata, messages_list, context_data_list
@@ -225,24 +242,33 @@ def save_session_data(
 
                 # Сохранение контекста
                 cursor.execute("DELETE FROM context_data;")
-                # Готовим данные для вставки. Убедимся, что все ключи есть.
                 context_to_insert = []
                 for item in context_data_list:
-                    # Убедимся, что chunk_num корректно обрабатывается (None -> 0 для INTEGER NOT NULL)
+                    embedding_blob = None
+                    # Сериализация эмбеддинга, если он есть
+                    if 'embedding' in item and isinstance(item.get('embedding'), np.ndarray):
+                        try:
+                            buffer = BytesIO()
+                            np.save(buffer, item['embedding'])
+                            embedding_blob = buffer.getvalue()
+                        except Exception as e:
+                            logger.warning(f"Не удалось сериализовать эмбеддинг для '{item.get('file_path')}': {e}. Эмбеддинг не будет сохранен.")
+
                     chunk_num_val = item.get("chunk_num")
                     if chunk_num_val is None or not isinstance(chunk_num_val, int):
-                        chunk_num_val = 0 # Default to 0 for summary or if missing/invalid
+                        chunk_num_val = 0
 
                     context_to_insert.append((
                         item.get("file_path"),
                         item.get("type"),
                         chunk_num_val,
-                        item.get("content")
+                        item.get("content"),
+                        embedding_blob
                     ))
 
                 if context_to_insert:
                     cursor.executemany(
-                        "INSERT INTO context_data (file_path, type, chunk_num, content) VALUES (?, ?, ?, ?)",
+                        "INSERT INTO context_data (file_path, type, chunk_num, content, embedding) VALUES (?, ?, ?, ?, ?)",
                         context_to_insert
                     )
 

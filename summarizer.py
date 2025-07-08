@@ -6,6 +6,7 @@ import logging
 from typing import Dict, Optional, List, Any, Tuple
 
 from PySide6.QtCore import QObject, Signal, Slot, QThread
+import numpy as np
 
 import google.generativeai as genai
 from google.api_core import exceptions as google_exceptions
@@ -61,10 +62,10 @@ except ImportError:
     logging.warning("Библиотека 'PyPDF2' не найдена. PDF файлы будут проигнорированы.")
 
 
-class SummarizerWorker(QThread):
+class SummarizerWorker(QObject):
     """
-    Рабочий поток, который выполняет анализ контента файлов.
-    Теперь он сам читает файлы из переданных путей.
+    Рабочий объект, который выполняет анализ контента файлов в отдельном потоке.
+    Наследуется от QObject для корректной работы с moveToThread.
     """
     progress_updated = Signal(int, int, str)
     file_summarized = Signal(str, str)
@@ -80,6 +81,7 @@ class SummarizerWorker(QThread):
                  repo_branch: Optional[str],
                  github_manager: Optional[Any],
                  rag_enabled: bool,
+                 semantic_search_enabled: bool,
                  gemini_api_key: str,
                  model_name: str,
                  app_lang: str = 'en'):
@@ -91,6 +93,7 @@ class SummarizerWorker(QThread):
         self.repo_branch = repo_branch
         self.github_manager = github_manager
         self.rag_enabled = rag_enabled
+        self.semantic_search_enabled = semantic_search_enabled
         self.gemini_api_key = gemini_api_key
         self.model_name = model_name
         self._is_cancelled = False
@@ -136,7 +139,7 @@ class SummarizerWorker(QThread):
 
     @Slot()
     def run(self):
-        """Основной метод потока, выполняющий чтение и анализ файлов."""
+        """Основной метод воркера, выполняющий чтение и анализ файлов."""
         logger.info(self.tr("Запуск потока анализа для {0} файлов. Режим RAG: {1}").format(len(self.file_paths), self.rag_enabled))
 
         try:
@@ -171,14 +174,28 @@ class SummarizerWorker(QThread):
                     summary_text = self._create_summary(display_path, content)
                     if self._is_cancelled: break
                     self.file_summarized.emit(display_path, summary_text)
-                    context_for_this_file.append({'file_path': display_path, 'type': 'summary', 'chunk_num': 0, 'content': summary_text})
+                    context_for_this_file.append({'file_path': display_path, 'type': 'summary', 'chunk_num': 0, 'content': summary_text, 'embedding': None})
                     
                     if content.strip():
                         chunks = self._split_into_chunks(display_path, content)
+                        embeddings = []
+                        if self.semantic_search_enabled and chunks:
+                            # Генерация эмбеддингов для чанков
+                            embeddings = self._create_embeddings(chunks, display_path)
+                            if self._is_cancelled: break
+
+                        # Совмещаем чанки с их эмбеддингами
                         for j, chunk_text in enumerate(chunks):
-                            context_for_this_file.append({'file_path': display_path, 'type': 'chunk', 'chunk_num': j + 1, 'content': chunk_text})
+                            chunk_embedding = embeddings[j] if embeddings and j < len(embeddings) else None
+                            context_for_this_file.append({
+                                'file_path': display_path,
+                                'type': 'chunk',
+                                'chunk_num': j + 1,
+                                'content': chunk_text,
+                                'embedding': chunk_embedding
+                            })
                 else:
-                    context_for_this_file.append({'file_path': display_path, 'type': 'full_file', 'chunk_num': 0, 'content': content})
+                    context_for_this_file.append({'file_path': display_path, 'type': 'full_file', 'chunk_num': 0, 'content': content, 'embedding': None})
                     self.file_summarized.emit(display_path, self.tr("(Режим RAG отключен, файл используется целиком)"))
 
                 if context_for_this_file: self.context_data_ready.emit(context_for_this_file)
@@ -189,7 +206,7 @@ class SummarizerWorker(QThread):
                 self.progress_updated.emit(total_count, total_count, self.tr("Завершено"))
         
         finally:
-            logger.info(self.tr("Поток анализа завершил свою работу."))
+            logger.info(self.tr("Воркер анализа завершил свою работу."))
             self.finished.emit()
 
     def _read_file_content(self, file_path: str) -> Tuple[Optional[str], Optional[str]]:
@@ -221,6 +238,49 @@ class SummarizerWorker(QThread):
         except Exception as e:
             return None, self.tr("Ошибка чтения файла {0}: {1}").format(os.path.basename(file_path), e)
 
+    def _create_embeddings(self, chunks: List[str], file_path: str) -> List[Optional[np.ndarray]]:
+        """Создает эмбеддинги для списка чанков с использованием Gemini API."""
+        if not self.gemini_api_key or not chunks:
+            return [None] * len(chunks)
+
+        logger.debug(f"Создание эмбеддингов для {len(chunks)} чанков из файла '{file_path}'...")
+        try:
+            # Модель для эмбеддингов
+            embedding_model = 'models/text-embedding-004'
+
+            # API может принимать список текстов
+            result = genai.embed_content(
+                model=embedding_model,
+                content=chunks,
+                task_type="RETRIEVAL_DOCUMENT",
+                title=f"Фрагменты кода из файла {os.path.basename(file_path)}"
+            )
+
+            if self._is_cancelled:
+                logger.info(f"Отмена создания эмбеддингов для '{file_path}'.")
+                return [None] * len(chunks)
+
+            embeddings = result.get('embedding', [])
+
+            # Преобразуем в numpy массивы
+            numpy_embeddings = [np.array(e) for e in embeddings]
+
+            logger.info(f"Успешно создано {len(numpy_embeddings)} эмбеддингов для '{file_path}'.")
+
+            # Убедимся, что количество эмбеддингов соответствует количеству чанков
+            if len(numpy_embeddings) != len(chunks):
+                 logger.error(f"Несоответствие количества чанков и эмбеддингов для '{file_path}'! Ожидалось {len(chunks)}, получено {len(numpy_embeddings)}.")
+                 # Возвращаем None-ы, чтобы избежать падения
+                 return [None] * len(chunks)
+
+            return numpy_embeddings
+
+        except Exception as e:
+            msg = self.tr("Ошибка при создании эмбеддингов для '{0}': {1}").format(file_path, e)
+            logger.error(msg, exc_info=True)
+            self.error_occurred.emit(msg)
+            return [None] * len(chunks) # Возвращаем список None, чтобы не прерывать весь анализ
+    
     def _create_summary(self, file_path: str, content: str) -> str:
         """Создает саммари для контента файла с надежной обработкой ответа."""
         if not content.strip() or not self.generative_model:

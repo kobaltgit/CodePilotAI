@@ -25,3 +25,5 @@ tree-sitter
 
 python-docx
 pypdf2
+
+numpy
