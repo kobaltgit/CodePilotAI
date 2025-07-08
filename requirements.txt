@@ -22,3 +22,6 @@ Pygments
 
 # Для парсинга кода и создания синтаксических деревьев
 tree-sitter
+
+python-docx
+pypdf2
