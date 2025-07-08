@@ -1,7 +1,7 @@
 # --- Файл: main.py ---
 # --- Глобальные константы ---
 APP_NAME = "CodePilotAI"
-APP_VERSION = "1.0.1" # Пример версии
+APP_VERSION = "2.0.0" # Пример версии
 AUTHOR_NAME = "kobaltGIT"
 GITHUB_URL = "https://github.com/kobaltgit/CodePilotAI"
 APP_ICON_FILENAME = "app_icon.png"
@@ -62,20 +62,25 @@ class HelpDialog(QDialog):
         layout.addWidget(self.help_view, 1)
         script_dir = os.path.dirname(os.path.abspath(__file__))
 
-        # Используем переданный язык для выбора файла справки
-        help_file = "help_content_en.html" if app_lang == 'en' else "help_content.html"
-        html_file_path = os.path.join(script_dir, help_file)
+        # 1. Определяем основной и резервный файлы
+        primary_help_file = "help_content.html" if app_lang == 'ru' else "help_content_en.html"
+        fallback_help_file = "help_content_en.html" # Резервный файл - всегда английская версия
 
-        if os.path.exists(html_file_path):
-            local_url = QUrl.fromLocalFile(QFileInfo(html_file_path).absoluteFilePath())
+        # 2. Пытаемся найти основной файл
+        path_to_load = os.path.join(script_dir, primary_help_file)
+        
+        # 3. Если основной файл не найден, используем резервный
+        if not os.path.exists(path_to_load):
+            self.logger.warning(f"Основной файл справки '{primary_help_file}' не найден, используется резервный.")
+            path_to_load = os.path.join(script_dir, fallback_help_file)
+
+        # 4. Загружаем найденный файл или показываем ошибку
+        if os.path.exists(path_to_load):
+            local_url = QUrl.fromLocalFile(QFileInfo(path_to_load).absoluteFilePath())
             self.help_view.load(local_url)
         else:
-            fallback_path = os.path.join(script_dir, "help_content.html")
-            if os.path.exists(fallback_path):
-                local_url = QUrl.fromLocalFile(QFileInfo(fallback_path).absoluteFilePath())
-                self.help_view.load(local_url)
-            else:
-                self.help_view.setHtml(self.tr("<html><body><h1>Ошибка</h1><p>Файл справки не найден.</p></body></html>"))
+            self.logger.error("Файлы справки не найдены (ни основной, ни резервный).")
+            self.help_view.setHtml(self.tr("<html><body><h1>Ошибка</h1><p>Файл справки не найден.</p></body></html>"))
 
         close_button = QPushButton(self.tr("Закрыть"))
         close_button.clicked.connect(self.accept)
@@ -948,7 +953,7 @@ class MainWindow(QMainWindow):
 def setup_logging() -> str:
     log_dir = "logs"
     if not os.path.exists(log_dir): os.makedirs(log_dir)
-    log_filename = os.path.join(log_dir, f"{APP_NAME.lower()}_{datetime.datetime.now().strftime('%Y-%m-%d')}.log")
+    log_filename = os.path.join(log_dir, f"{APP_NAME.lower()}.log")
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.DEBUG)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')

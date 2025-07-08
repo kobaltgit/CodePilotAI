@@ -12,7 +12,7 @@ from PySide6.QtCore import (
     QObject, Signal, QThread, QFile, QTextStream, Slot, QIODevice, QFileSystemWatcher, Qt, QStringConverter, QTimer # Добавляем QTimer
 )
 from PySide6.QtGui import (
-    QTextCharFormat, QTextCursor, QColor, QFont, QKeySequence, QAction
+    QTextCharFormat, QTextCursor, QColor, QFont, QKeySequence, QAction, QTextDocument
 )
 
 logger = logging.getLogger(__name__)
@@ -417,16 +417,16 @@ class LogViewerWindow(QWidget):
              format = QTextCharFormat()
              format.setBackground(QColor("#a4c639")) # Цвет подсветки
 
-             found_cursor = self.log_text_edit.document().find(self._current_search_query, cursor, self.log_text_edit.document().findConstants().FindFlags(0))
+             found_cursor = self.log_text_edit.document().find(self._current_search_query, cursor, QTextDocument.FindFlags())
 
              while not found_cursor.isNull() and found_cursor.position() >= new_line_start_pos:
-                  # Убеждаемся, что совпадение находится в пределах новой строки
-                  if found_cursor.position() <= self.log_text_edit.document().characterCount() - 1:
-                       found_cursor.mergeCharFormat(format)
-                       self._search_results_count += 1 # Увеличиваем общий счетчик
-                       found_cursor = self.log_text_edit.document().find(self._current_search_query, found_cursor, self.log_text_edit.document().findConstants().FindFlags(0))
-                  else:
-                       break # Вышли за пределы новой строки (случается при перекрытии)
+                 # Убеждаемся, что совпадение находится в пределах новой строки
+                 if found_cursor.position() <= self.log_text_edit.document().characterCount() - 1:
+                     found_cursor.mergeCharFormat(format)
+                     self._search_results_count += 1 # Увеличиваем общий счетчик
+                     found_cursor = self.log_text_edit.document().find(self._current_search_query, found_cursor, QTextDocument.FindFlags())
+                 else:
+                     break # Вышли за пределы новой строки (случается при перекрытии)
              self._update_search_status() # Обновляем статус-лейбл
 
     def _highlight_search_text(self, text: str):
@@ -454,7 +454,7 @@ class LogViewerWindow(QWidget):
         highlight_format = QTextCharFormat()
         highlight_format.setBackground(QColor("#a4c639")) # Цвет подсветки
 
-        cursor = doc.find(text, doc.findConstants().FindStartIndex)
+        cursor = doc.find(text, 0)
 
         while not cursor.isNull():
             cursor.mergeCharFormat(highlight_format)
@@ -482,8 +482,8 @@ class LogViewerWindow(QWidget):
         if start_position >= self.log_text_edit.document().characterCount() - 1:
              start_position = 0 # Если в конце, переходим в начало для циклического поиска
 
-        flags = self.log_text_edit.document().findConstants().FindFlags(0) # Поиск вперед
-        found_cursor = self.log_text_edit.document().find(self._current_search_query, start_position, flags)
+        flags = QTextDocument.FindFlags() # Поиск вперед
+        found_cursor = self.log_text_edit.document().find(self._current_search_query, 0, flags)
 
         if found_cursor.isNull():
              # Если не нашли дальше, начинаем поиск сначала документа (циклически)
@@ -512,8 +512,10 @@ class LogViewerWindow(QWidget):
         if start_position <= 0:
             start_position = self.log_text_edit.document().characterCount() - 1 # Если в начале, переходим в конец для циклического поиска
 
-        flags = self.log_text_edit.document().findConstants().FindBackward # Поиск назад
+        flags = QTextDocument.FindFlag.FindBackward # Поиск назад
         found_cursor = self.log_text_edit.document().find(self._current_search_query, start_position, flags)
+        found_cursor = self.log_text_edit.document().find(self._current_search_query,
+                                                          self.log_text_edit.document().characterCount() - 1, flags)
 
         if found_cursor.isNull():
             # Если не нашли назад, начинаем поиск с конца документа (циклически)
@@ -543,7 +545,9 @@ class LogViewerWindow(QWidget):
         doc = self.log_text_edit.document()
 
         found_count = 0
-        search_cursor = doc.find(self._current_search_query, doc.findConstants().FindStartIndex)
+        search_cursor = doc.find(self._current_search_query, 0)
+        found_count += 1
+        search_cursor = doc.find(self._current_search_query, search_cursor)
 
         while not search_cursor.isNull() and found_count <= index:
             if found_count == index:
