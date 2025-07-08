@@ -154,7 +154,7 @@ class GitHubManager(QObject):
             if element.type == "blob":
                 if any(part in ignored_dirs for part in element.path.split('/')):
                     continue
-                if not element.path.endswith(extensions):
+                if not element.path.lower().endswith(extensions):
                     continue
                 if element.size > max_size_bytes:
                     skipped_info.append(self.tr("Пропущен (размер > {0}KB): {1}").format(max_file_size_kb, element.path))
@@ -207,14 +207,14 @@ class GitHubManager(QObject):
             logger.error(msg)
             return msg
 
-    def get_file_content(self, repo: Repository, file_path: str, branch_name: str) -> Optional[str]:
+    def get_file_content(self, repo: Repository, file_path: str, branch_name: str) -> Optional[bytes]:
         """
-        Получает содержимое одного файла из указанной ветки репозитория.
+        Получает содержимое одного файла из указанной ветки репозитория в виде байтов.
         """
         if not file_path:
-             logger.warning(self.tr("get_file_content вызван с пустым путем. Пропуск."))
-             return None
-             
+            logger.warning(self.tr("get_file_content вызван с пустым путем. Пропуск."))
+            return None
+
         logger.debug(self.tr("Запрос содержимого файла: {0} из ветки {1}").format(file_path, branch_name))
         try:
             content_file = repo.get_contents(file_path, ref=branch_name)
@@ -224,11 +224,12 @@ class GitHubManager(QObject):
                 return None
 
             if content_file.encoding == "base64" and content_file.content:
-                decoded_content = base64.b64decode(content_file.content).decode('utf-8', errors='ignore')
-                return decoded_content
+                # Возвращаем сырые байты, не декодируя в UTF-8
+                decoded_bytes = base64.b64decode(content_file.content)
+                return decoded_bytes
             else:
                 logger.warning(self.tr("Файл '{0}' пуст или имеет неизвестную кодировку: {1}").format(file_path, content_file.encoding))
-                return ""
+                return b""  # Возвращаем пустые байты
         except UnknownObjectException:
             logger.error(self.tr("Файл '{0}' не найден в ветке '{1}'.").format(file_path, branch_name))
             return None

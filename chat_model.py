@@ -21,6 +21,18 @@ from github.Repository import Repository
 from summarizer import SummarizerWorker
 
 logger = logging.getLogger(__name__)
+try:
+    import docx
+except ImportError:
+    docx = None
+    logging.warning("Библиотека 'python-docx' не найдена. DOCX файлы будут проигнорированы.")
+try:
+    from PyPDF2 import PdfReader
+    from io import BytesIO
+except ImportError:
+    PdfReader = None
+    BytesIO = None
+    logging.warning("Библиотека 'PyPDF2' не найдена. PDF файлы будут проигнорированы.")
 
 # Глобальный лимит контекстного окна
 CONTEXT_WINDOW_LIMIT = 1048576
@@ -317,8 +329,6 @@ class ChatModel(QObject):
 
     # Удалены все слоты, которые были ниже (on_gemini_model_loaded, _on_gemini_model_loading_error, _fetch_available_models, _cleanup_gemini_loader, _clear_gemini_loader_references, _cleanup_gemini_models_list, _clear_models_list_references, _on_models_list_received, _on_models_list_error)
 
-
-
     # --- Анализ проекта (полностью переработано) ---
     def start_project_analysis(self):
         """Запускает анализ проекта, независимо от его типа (GitHub или локальный)."""
@@ -334,54 +344,42 @@ class ChatModel(QObject):
         # 1. Очищаем старый контекст
         self._clear_project_context()
 
-        # 2. Получаем контент файлов в зависимости от типа проекта
-        self.statusMessage.emit(self.tr("Сбор файлов для анализа..."), 0)
-        files_content = self._get_files_content_for_analysis()
-        if not files_content:
-            self.analysisError.emit(self.tr("Не найдено подходящих файлов для анализа в указанном источнике."))
+        # 2. Получаем ПУТИ к файлам
+        self.statusMessage.emit(self.tr("Поиск файлов для анализа..."), 0)
+        file_paths = self._get_file_paths_for_analysis()
+        if not file_paths:
+            self.analysisError.emit(self.tr("Не найдено подходящих файлов для анализа. Проверьте путь и выбранные расширения."))
             return
 
         # 3. Запускаем SummarizerWorker
         self.analysisStarted.emit()
-        self.statusMessage.emit(self.tr("Начат анализ {0} файлов...").format(len(files_content)), 0)
+        self.statusMessage.emit(self.tr("Начат анализ {0} файлов...").format(len(file_paths)), 0)
 
-                # 1. Очищаем старый контекст
-        self._clear_project_context()
-
-        # 2. Получаем контент файлов в зависимости от типа проекта
-        self.statusMessage.emit(self.tr("Сбор файлов для анализа..."), 0)
-        files_content = self._get_files_content_for_analysis()
-        if not files_content:
-            self.analysisError.emit(self.tr("Не найдено подходящих файлов для анализа в указанном источнике."))
-            return
-
-        # 3. Запускаем SummarizerWorker
-        self.analysisStarted.emit()
-        self.statusMessage.emit(self.tr("Начат анализ {0} файлов...").format(len(files_content)), 0)
-
-        # Создаем SummarizerWorker (который сам является QThread)
+        # Создаем SummarizerWorker, передавая ему пути, а не контент
         self._analysis_worker = SummarizerWorker(
-            files_content=files_content,
+            file_paths=file_paths, # <-- ИЗМЕНЕНО
+            project_type=self._project_type, # <-- ДОБАВЛЕНО
+            project_source_path=self._local_path or self._repo_url, # <-- ДОБАВЛЕНО
+            repo_object=self._repo_object, # <-- ДОБАВЛЕНО
+            repo_branch=self._repo_branch, # <-- ДОБАВЛЕНО
+            github_manager=self._github_manager, # <-- ДОБАВЛЕНО
             rag_enabled=self._rag_enabled,
             gemini_api_key=self._gemini_api_key,
             model_name=self._model_name,
             app_lang=self._app_language
         )
 
-        # Подключение сигналов
+        # Подключение сигналов (остается без изменений)
         self._analysis_worker.context_data_ready.connect(self._on_context_data_ready)
         self._analysis_worker.file_summarized.connect(self._on_file_summarized)
         self._analysis_worker.progress_updated.connect(self.analysisProgressUpdated)
         self._analysis_worker.error_occurred.connect(self.analysisError)
         self._analysis_worker.finished.connect(self._on_analysis_finished)
-        # Подключаем обнуление ссылок к сигналу finished самого воркера
-        self._analysis_worker.finished.connect(lambda: setattr(self, '_analysis_worker', None)) # <-- Добавлено обнуление ссылки на воркер
-        self._analysis_worker.finished.connect(lambda: setattr(self, '_analysis_thread', None)) # <-- Добавлено обнуление ссылки на поток (которым он теперь является)
+        self._analysis_worker.finished.connect(lambda: setattr(self, '_analysis_worker', None))
+        self._analysis_worker.finished.connect(lambda: setattr(self, '_analysis_thread', None))
 
-        # Поскольку SummarizerWorker сам является QThread, он запускает себя.
-        # self._analysis_thread больше не нужен, его ссылка используется для удобства.
-        self._analysis_thread = self._analysis_worker # <-- Присваиваем ссылку на воркер, который теперь и есть поток.
-        self._analysis_thread.start() # Запускаем поток
+        self._analysis_thread = self._analysis_worker
+        self._analysis_thread.start()
 
 
     def _is_ready_for_analysis(self) -> Tuple[bool, str]:
@@ -397,31 +395,33 @@ class ChatModel(QObject):
             return False, self.tr("Тип проекта не определен.")
         return True, ""
 
-    def _get_files_content_for_analysis(self) -> Dict[str, str]:
-        """Собирает контент файлов из GitHub или локальной папки."""
-        files_content = {}
+    def _get_file_paths_for_analysis(self) -> List[str]:
+        """Собирает список путей к файлам из GitHub или локальной папки."""
+        file_paths = []
+        if not self._extensions:
+            logger.warning("Список расширений для анализа пуст. Файлы не будут собраны.")
+            return []
+
         if self._project_type == 'github':
-            # Добавлена проверка self._github_manager на None
             if not self._github_manager:
                 logger.error("GitHubManager не инициализирован. Невозможно получить файлы.")
-                return {}
+                return []
+            # get_repo_file_tree возвращает dict {path: size}, нам нужны только ключи
             files_to_process, _ = self._github_manager.get_repo_file_tree(self._repo_object, self._repo_branch, self._extensions)
-            for file_path in files_to_process:
-                content = self._github_manager.get_file_content(self._repo_object, file_path, self._repo_branch)
-                if content is not None: files_content[file_path] = content
+            file_paths = list(files_to_process.keys())
+
         elif self._project_type == 'local':
             ignored_dirs = {"venv", ".venv", "__pycache__", ".git", ".vscode", ".idea", "node_modules"}
             for root, dirs, files in os.walk(self._local_path, topdown=True):
                 dirs[:] = [d for d in dirs if d not in ignored_dirs]
                 for file in files:
-                    if file.endswith(self._extensions):
-                        file_path_full = os.path.join(root, file)
-                        try:
-                            with open(file_path_full, 'r', encoding='utf-8', errors='ignore') as f:
-                                files_content[os.path.relpath(file_path_full, self._local_path)] = f.read()
-                        except Exception as e:
-                            logger.warning(self.tr("Не удалось прочитать локальный файл {0}: {1}").format(file, e))
-        return files_content
+                    if file.lower().endswith(self._extensions):
+                        full_path = os.path.join(root, file)
+                        # Для локальных файлов мы будем использовать полный путь
+                        file_paths.append(full_path)
+        
+        logger.info(f"Найдено {len(file_paths)} файлов для анализа.")
+        return file_paths
 
     def cancel_analysis(self):
         if self._analysis_thread and self._analysis_thread.isRunning():
@@ -712,7 +712,7 @@ class ChatModel(QObject):
         if self._project_context:
             # Промпт для режима анализа кода
             base_instructions = self.tr(
-                "Ты — мой ассистент по программированию. Анализируй предоставленный контекст и отвечай на вопросы. "
+                "Ты — мой ассистент по программированию и другим направлениям, это зависит от контекста. Анализируй предоставленный контекст и отвечай на вопросы. "
                 "Отвечай {0}, если не указано иное. При ответе всегда используй Pygments для подсветки кода."
             ).format(lang_instruction_phrase)
         else:
@@ -878,7 +878,7 @@ class ChatModel(QObject):
         self._file_summaries_for_display = {} # <-- Очищаем при создании новой сессии
         self._current_session_filepath = None
         # Убедимся, что расширения устанавливаются корректно, без начальных точек
-        self._extensions = tuple([".py", ".txt", ".md", ".json", ".html", ".css", ".js", ".yaml", ".yml", ".pdf", ".docx"])
+        self._extensions = tuple()
         self._model_name = "gemini-1.5-flash-latest" # Устанавливаем по умолчанию актуальную модель
         self._max_output_tokens = 65536
         self._instructions = ""
