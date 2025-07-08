@@ -271,7 +271,9 @@ class MainWindow(QMainWindow):
         # --- Общие кнопки анализа ---
         analysis_layout = QHBoxLayout()
         self.analyze_repo_button = QPushButton(self.tr("Анализировать"))
+        # self.analyze_repo_button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.cancel_analysis_button = QPushButton(self.tr("Отмена анализа"))
+        # self.cancel_analysis_button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
         # --- НОВОЕ: Прогресс-бар ---
         self.analysis_progress_bar = QProgressBar()
@@ -283,17 +285,13 @@ class MainWindow(QMainWindow):
         self.view_summaries_button.setToolTip(self.tr("Просмотреть проанализированные файлы"))
         self.view_summaries_button.setFixedSize(32, 32)
         font = self.view_summaries_button.font(); font.setPointSize(14); self.view_summaries_button.setFont(font)
+        
+        # --- ДОБАВЛЕНО: Добавляем прогресс-бар в компоновку ---
         analysis_layout.addWidget(self.analyze_repo_button, 1)
         analysis_layout.addWidget(self.cancel_analysis_button, 1)
-
-        # --- ДОБАВЛЕНО: Добавляем прогресс-бар в компоновку ---
         analysis_layout.addWidget(self.analysis_progress_bar, 2)
-        analysis_layout.addSpacing(20)
-        analysis_layout.addWidget(self.view_summaries_button)
-
-        analysis_layout.addSpacing(20)
-        analysis_layout.addWidget(self.view_summaries_button)
-        analysis_layout.addStretch(0)
+        # analysis_layout.addStretch(1) # Распорка, чтобы прижать кнопку вправо
+        analysis_layout.addWidget(self.view_summaries_button, 0)
         right_layout.addLayout(analysis_layout)
 
         # --- Блок настроек ---
