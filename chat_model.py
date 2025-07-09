@@ -153,6 +153,8 @@ class ChatModel(QObject):
         # Специфичные для проекта
         self._project_type: Optional[str] = None  # 'github' или 'local'
         self._is_git_repo: bool = False
+        self._is_partial_update: bool = False
+        self._last_updated_files: List[str] = []
         self._repo_url: Optional[str] = None
         self._repo_branch: Optional[str] = None
         self._local_path: Optional[str] = None
@@ -261,6 +263,7 @@ class ChatModel(QObject):
     # --- Анализ проекта ---
     def start_project_analysis(self):
         """Запускает анализ проекта, независимо от его типа (GitHub или локальный)."""
+        self._is_partial_update = False
         is_ready, error_msg = self._is_ready_for_analysis()
         if not is_ready:
             self.analysisError.emit(error_msg)
@@ -405,7 +408,17 @@ class ChatModel(QObject):
 
             # Удаляем старый контекст для этих файлов
             # Нормализуем пути для корректного сравнения
-            relative_paths_to_remove = {os.path.relpath(fp, self._local_path) for fp in files_to_reanalyze}
+            relative_paths_to_remove = {os.path.relpath(fp, self._local_path).replace('\\', '/') for fp in files_to_reanalyze}
+            
+            # --- НОВЫЙ КОД ---
+            self._is_partial_update = True
+            self._last_updated_files = sorted(list(relative_paths_to_remove))
+            # --- КОНЕЦ НОВОГО КОДА ---
+
+            self._project_context = [
+                item for item in self._project_context 
+                if item.get('file_path') not in relative_paths_to_remove
+            ]
             
             self._project_context = [
                 item for item in self._project_context 
@@ -461,8 +474,18 @@ class ChatModel(QObject):
 
     @Slot()
     def _on_analysis_finished(self):
+        if self._is_partial_update and self._last_updated_files:
+            files_str = ", ".join(self._last_updated_files)
+            msg = self.tr("[Система]: Контекст был обновлен для следующих файлов: {0}").format(files_str)
+            self.add_system_message(msg)
+            self.statusMessage.emit(self.tr("Обновление контекста завершено."), 5000)
+            # Сбрасываем флаги
+            self._is_partial_update = False
+            self._last_updated_files = []
+        else:
+            self.statusMessage.emit(self.tr("Анализ проекта завершен."), 5000)
+
         self.analysisFinished.emit()
-        self.statusMessage.emit(self.tr("Анализ проекта завершен."), 5000)
         self.fileSummariesChanged.emit(self._file_summaries_for_display)
         
     # --- RAG и основной запрос к API ---
@@ -565,16 +588,25 @@ class ChatModel(QObject):
                 self.apiIntermediateStep.emit(self.tr("Контекст проекта частично урезан из-за лимита токенов."))
 
         # 3. История чата
+        # 3. История чата
         history_to_consider = self._chat_history[:-1]
         history_part = []
         for message in reversed(history_to_consider):
             if message.get("excluded", False): continue
-            cleaned_message = clean_message(message)
-            message_tokens = _count_tokens_helper([cleaned_message])
+            
+            # --- НОВАЯ ЛОГИКА: Преобразуем 'system' в 'user' для API ---
+            message_for_api = clean_message(message)
+            if message_for_api.get("role") == "system":
+                message_for_api["role"] = "user"
+            # --- КОНЕЦ НОВОЙ ЛОГИКИ ---
+
+            message_tokens = _count_tokens_helper([message_for_api])
             if message_tokens and current_tokens + message_tokens <= prompt_token_budget:
-                history_part.insert(0, cleaned_message); current_tokens += message_tokens
+                history_part.insert(0, message_for_api)
+                current_tokens += message_tokens
             else:
-                self.apiIntermediateStep.emit(self.tr("Часть истории чата исключена из-за лимита токенов.")); break
+                self.apiIntermediateStep.emit(self.tr("Часть истории чата исключена из-за лимита токенов."))
+                break
         final_prompt_parts.extend(history_part)
 
         # 4. Последний запрос пользователя
@@ -652,7 +684,7 @@ class ChatModel(QObject):
 
         # --- Шаг 1: Разделяем контекст на саммари и чанки ---
         all_summaries = [item for item in self._project_context if item['type'] == 'summary']
-        all_chunks = [item for item in self._project_context if item['type'] == 'chunk' and item.get('embedding') is not None]
+        all_chunks = [item for item in self._project_context if item['type'] == 'chunk']
 
         relevant_items = []
 
@@ -797,6 +829,11 @@ class ChatModel(QObject):
 
     def add_model_response(self, text: str):
         self._chat_history.append({"role": "model", "parts": [text or ""], "excluded": False})
+        self._mark_dirty(); self.historyChanged.emit(self.get_chat_history())
+
+    def add_system_message(self, text: str):
+        """Добавляет системное сообщение в историю чата."""
+        self._chat_history.append({"role": "system", "parts": [text], "excluded": False})
         self._mark_dirty(); self.historyChanged.emit(self.get_chat_history())
 
     def toggle_api_exclusion(self, index: int):

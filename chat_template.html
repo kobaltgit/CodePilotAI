@@ -202,10 +202,12 @@
 
             if (isExcluded) messageDiv.classList.add('excluded');
 
-            const prefixSpan = document.createElement('span');
-            prefixSpan.classList.add('prefix');
-            prefixSpan.textContent = (role === 'user') ? texts.user_prefix : texts.model_prefix;
-            messageDiv.appendChild(prefixSpan);
+            if (role !== 'system') {
+                const prefixSpan = document.createElement('span');
+                prefixSpan.classList.add('prefix');
+                prefixSpan.textContent = (role === 'user') ? texts.user_prefix : texts.model_prefix;
+                messageDiv.appendChild(prefixSpan);
+            }
 
             let contentElement;
             if (isExcluded) {
@@ -229,7 +231,7 @@
 
             if (role === 'model') addCodeBlockButtons(contentElement, texts);
 
-            if (messageIndex >= 0) { // Не добавляем кнопки для системных сообщений
+            if (role !== 'system' && messageIndex >= 0) {
                 const scrollTopButton = document.createElement('button');
                 scrollTopButton.className = 'scroll-to-top-button';
                 scrollTopButton.textContent = '⮝';

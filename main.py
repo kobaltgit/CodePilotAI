@@ -759,19 +759,39 @@ class MainWindow(QMainWindow):
     @Slot(bool)
     def _update_instructions_visibility(self, visible): self.instructions_container.setVisible(visible); self.toggle_instructions_button.setText(self.tr("Свернуть инструкции ▲") if visible else self.tr("Развернуть инструкции ▼"))
     @Slot()
-    def _render_chat_view(self): # ... код рендеринга без изменений ...
+    def _render_chat_view(self):
         if not self.view_model.isChatViewReady: return
         history, last_error, intermediate_step = self.view_model.getChatHistoryForView()
+        
         self.dialog_textedit.clear_chat()
         md_ext = ["fenced_code", "codehilite", "nl2br", "tables"]
+
         for index, msg in enumerate(history):
-            role = msg.get("role"); content = msg.get("parts", [""])[0]; is_excluded = msg.get("excluded", False)
-            html_out = markdown.markdown(content, extensions=md_ext) if role == "model" else f"<pre>{html.escape(content)}</pre>"
-            self.dialog_textedit.add_message(role, f"{html_out}<hr>", index, is_excluded, is_last=False)
+            role = msg.get("role")
+            content = msg.get("parts", [""])[0]
+            is_excluded = msg.get("excluded", False)
+            
+            html_out = ""
+            if role == "model":
+                html_out = markdown.markdown(content, extensions=md_ext)
+            elif role == "user":
+                html_out = f"<pre>{html.escape(content)}</pre>"
+            elif role == "system":
+                # Для системных сообщений просто экранируем HTML и оборачиваем в теги
+                html_out = f"<i>{html.escape(content)}</i>"
+            
+            # Добавляем разделитель для всех, кроме системных
+            if role != "system":
+                html_out += "<hr>"
+
+            self.dialog_textedit.add_message(role, html_out, index, is_excluded, is_last=False)
             self._update_toggle_all_button()
+
+        # Обработка промежуточных шагов, лоадера и ошибок остается без изменений
         if intermediate_step: self.dialog_textedit.add_message("system", f"<i>{html.escape(intermediate_step)}</i>", -1, False, is_last=False)
         if self.view_model.canCancelRequest or self.view_model.canCancelAnalysis: self.dialog_textedit.show_loader()
         if last_error: self.dialog_textedit.add_error_message(last_error)
+        
         self.dialog_textedit.scroll_to_bottom()
     @Slot(str, int)
     def _update_status_bar(self, message, timeout): self._status_clear_timer.stop(); self.statusBar().showMessage(message, 0); \
