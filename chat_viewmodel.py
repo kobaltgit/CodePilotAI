@@ -84,6 +84,7 @@ class ChatViewModel(QObject):
     # --- Сигналы для выполнения действий в View ---
     showFileDialog = Signal(str, str, str)
     showSaveFileDialogForGeneratedCode = Signal(str, str) # default_filename, code_content
+    showDiffWindow = Signal(str, str, str) # original_code, new_code, file_path
     showMessageDialog = Signal(str, str, str)
     clearApiKeyInput = Signal()
     clearTokenInput = Signal()
@@ -218,7 +219,7 @@ class ChatViewModel(QObject):
     @Property(str, notify=windowTitleChanged)
     def windowTitle(self) -> str:
         base_title = self.tr("CodePilotAI")
-        session_path = self._model.get_current_session_filepath()
+        session_path = self._model._current_session_filepath
         session_name = (os.path.basename(session_path).replace(db_manager.SESSION_EXTENSION, "")
                         if session_path
                         else self.tr("Новая сессия"))
@@ -295,6 +296,25 @@ class ChatViewModel(QObject):
                 self._last_api_intermediate_step)
 
     # --- Слоты для команд от View ---
+
+    @Slot(str, str)
+    def showDiffRequested(self, filename: str, new_code: str):
+        """
+        Слот для обработки запроса на показ окна сравнения.
+        Запрашивает оригинальный код у модели и инициирует показ окна.
+        """
+        logger.debug(f"ViewModel: Запрос на diff для '{filename}'. Запрашиваем оригинальный код у модели.")
+        original_code = self._model.get_original_file_content(filename)
+
+        if original_code is None:
+            # Если оригинальный файл не найден в контексте
+            error_msg = self.tr("Не удалось найти оригинальное содержимое файла '{0}' в текущем контексте проекта. Невозможно построить сравнение.").format(filename)
+            logger.warning(error_msg)
+            self.showMessageDialog.emit("warn", self.tr("Ошибка сравнения"), error_msg)
+            return
+
+        # Если все хорошо, испускаем сигнал для главного окна
+        self.showDiffWindow.emit(original_code, new_code, filename)
     
     def set_initial_session_path(self, filepath: str):
         """Запоминает путь к сессии, переданный при запуске."""

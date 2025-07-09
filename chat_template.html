@@ -79,8 +79,8 @@
         /* --- Стили для блоков кода с подсветкой Pygments --- */
         .codehilite {
             display: block; background: #333333; border: 1px solid #444;
-            padding: 10px; padding-top: 25px; border-radius: 4px;
-            position: relative; color: #d0d0d0; margin-top: 5px;
+            padding: 10px; padding-top: 25px; padding-bottom: 35px; /* Увеличили нижний padding */
+            border-radius: 4px; position: relative; color: #d0d0d0; margin-top: 5px;
             overflow: hidden; font-family: Consolas, 'Courier New', monospace; font-size: 0.95em;
         }
         .codehilite pre {
@@ -118,12 +118,29 @@
         .codehilite .vi { color: #f8f8f2 } .codehilite .vm { color: #f8f8f2 } .codehilite .il { color: #ae81ff }
 
         /* --- Кнопки и интерактивные элементы --- */
-        .copy-code-button {
-            position: absolute; bottom: 5px; right: 5px; font-size: 0.8em;
-            padding: 4px 8px; cursor: pointer; border: 1px solid #7fa4f9;
-            border-radius: 3px; background-color: #444; color: #7fa4f9; z-index: 1;
+        .code-button-container {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            display: flex;
+            gap: 5px; /* Расстояние между кнопками */
+            z-index: 1;
         }
-        .copy-code-button:hover { background-color: #555; border-color: #ccc; color: #fff; }
+        
+        .code-action-button {
+            font-size: 0.8em;
+            padding: 4px 8px;
+            cursor: pointer;
+            border: 1px solid #7fa4f9;
+            border-radius: 3px;
+            background-color: #444;
+            color: #7fa4f9;
+        }
+        .code-action-button:hover {
+            background-color: #555;
+            border-color: #ccc;
+            color: #fff;
+        }
 
         .toggle-exclusion-button {
             position: absolute; top: 2px; right: 5px; background: none; border: none;
@@ -289,41 +306,62 @@
         function addCodeBlockButtons(containerElement, texts) {
             const codeBlocks = containerElement.querySelectorAll('.codehilite');
             codeBlocks.forEach(block => {
-                // Кнопка Копировать (без изменений)
-                if (!block.querySelector('.copy-code-button')) {
+                
+                let buttonContainer = block.querySelector('.code-button-container');
+                if (!buttonContainer) {
+                    buttonContainer = document.createElement('div');
+                    buttonContainer.className = 'code-button-container';
+                    block.appendChild(buttonContainer);
+                }
+
+                if (!buttonContainer.querySelector('.copy-code-button')) {
                     const copyButton = document.createElement('button');
                     copyButton.textContent = texts.copy_button_text;
-                    copyButton.classList.add('copy-code-button');
+                    copyButton.className = 'code-action-button copy-code-button';
                     copyButton.onclick = () => copyCode(copyButton, texts);
-                    block.appendChild(copyButton);
+                    // Вставляем кнопку копирования первой
+                    buttonContainer.insertBefore(copyButton, buttonContainer.firstChild);
                 }
 
-                // --- НОВАЯ ЛОГИКА ДЛЯ КНОПКИ "СОХРАНИТЬ КАК" ---
-                if (!block.querySelector('.save-file-button')) {
-                    const precedingElement = block.previousElementSibling;
-                    let suggestedFilename = '';
+                const precedingElement = block.previousElementSibling;
+                let suggestedFilename = '';
 
-                    if (precedingElement && precedingElement.tagName === 'P') {
-                        const match = precedingElement.innerText.match(/File:\s*([\w\d\.\/\\_-]+)/);
-                        if (match && match[1]) {
-                            suggestedFilename = match[1];
-                        }
+                if (precedingElement && precedingElement.tagName === 'P') {
+                    const match = precedingElement.innerText.match(/File:\s*([\w\d\.\/\\_-]+)/);
+                    if (match && match[1]) {
+                        suggestedFilename = match[1];
                     }
-                    
-                    if (suggestedFilename) {
+                }
+                
+                if (suggestedFilename) {
+                    if (!buttonContainer.querySelector('.save-file-button')) {
                         const saveButton = document.createElement('button');
                         saveButton.textContent = texts.save_button_text;
-                        // Стилизуем кнопку, чтобы она была рядом с кнопкой копирования
-                        saveButton.classList.add('copy-code-button'); // Используем тот же стиль
-                        saveButton.style.right = '110px'; // Сдвигаем влево
-                        saveButton.classList.add('save-file-button'); // Уникальный класс
+                        saveButton.className = 'code-action-button save-file-button';
                         saveButton.onclick = () => saveFile(block, suggestedFilename);
-                        block.appendChild(saveButton);
-                        // Удаляем p-тег с именем файла, чтобы он не мозолил глаза
-                        precedingElement.style.display = 'none';
+                        buttonContainer.appendChild(saveButton);
                     }
+                    
+                    if (!buttonContainer.querySelector('.show-diff-button')) {
+                        const diffButton = document.createElement('button');
+                        diffButton.textContent = texts.diff_button_text;
+                        diffButton.className = 'code-action-button show-diff-button';
+                        diffButton.onclick = () => showDiff(block, suggestedFilename);
+                        buttonContainer.appendChild(diffButton);
+                    }
+                    
+                    precedingElement.style.display = 'none';
                 }
             });
+        }
+        
+        function showDiff(codeBlockDiv, filename) {
+            if (!codeBlockDiv) return;
+            const preElement = codeBlockDiv.querySelector('pre');
+            if (!preElement || !pyBridge) return;
+            const newCodeContent = preElement.innerText || preElement.textContent;
+            console.log(`JS: Запрос на показ diff для файла '${filename}'`);
+            pyBridge.request_show_diff(filename, newCodeContent);
         }
 
         function saveFile(codeBlockDiv, filename) {

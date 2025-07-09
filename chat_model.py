@@ -1013,7 +1013,57 @@ class ChatModel(QObject):
     def _mark_dirty(self):
         if not self._is_dirty: self._is_dirty = True; self.sessionStateChanged.emit(self._current_session_filepath, True)
     def is_dirty(self) -> bool: return self._is_dirty
-    def get_current_session_filepath(self) -> Optional[str]: return self._current_session_filepath
+    
+    def get_original_file_content(self, file_path: str) -> Optional[str]:
+        """
+        Находит и возвращает оригинальное содержимое файла.
+        Приоритет 1: Прямое чтение с диска (для локальных) или через API (для GitHub).
+        Приоритет 2 (Fallback): Сборка из сохраненного в сессии контекста.
+        """
+        # --- Приоритет 1: Прямое чтение из источника ---
+        source_content: Optional[str] = None
+        try:
+            if self._project_type == 'local' and self._local_path:
+                full_disk_path = os.path.join(self._local_path, file_path)
+                if os.path.exists(full_disk_path):
+                    with open(full_disk_path, 'rb') as f:
+                        source_content = f.read().decode('utf-8', errors='ignore')
+                    logger.info(f"Успешно прочитан оригинал файла '{file_path}' с диска.")
+
+            elif self._project_type == 'github' and self._github_manager and self._repo_object and self._repo_branch:
+                content_bytes = self._github_manager.get_file_content(self._repo_object, file_path, self._repo_branch)
+                if content_bytes is not None:
+                    source_content = content_bytes.decode('utf-8', errors='ignore')
+                    logger.info(f"Успешно получен оригинал файла '{file_path}' из GitHub API.")
+            
+            if source_content is not None:
+                return source_content
+        except Exception as e:
+            logger.warning(f"Ошибка при прямом чтении файла '{file_path}': {e}. Попытка использования резервного метода.")
+
+        # --- Приоритет 2: Резервный метод (сборка из контекста) ---
+        logger.warning(f"Не удалось прочитать '{file_path}' из источника. Используется резервный метод сборки из контекста.")
+        
+        if not self._project_context: return None
+
+        file_items = [
+            item for item in self._project_context
+            if item.get('file_path') == file_path and item.get('type') in ('full_file', 'chunk')
+        ]
+
+        if not file_items:
+            logger.warning(f"Резервный метод не удался: контент для файла '{file_path}' в контексте не найден.")
+            return None
+
+        if file_items[0].get('type') == 'full_file':
+            return file_items[0].get('content', '')
+
+        sorted_chunks = sorted(file_items, key=lambda x: x.get('chunk_num', 0))
+        full_content = "\n\n".join(chunk.get('content', '') for chunk in sorted_chunks)
+        
+        logger.debug(f"Оригинальное содержимое для '{file_path}' собрано из {len(sorted_chunks)} чанков (резервный метод).")
+        return full_content
+    
     def is_git_repo(self) -> bool:
         """Возвращает True, если текущий локальный проект является Git-репозиторием."""
         return self._project_type == 'local' and self._is_git_repo

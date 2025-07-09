@@ -200,14 +200,14 @@
         <translation>Part of the context was truncated due to the token limit.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="1039"/>
-        <source>Файл '{0}' успешно сохранен.</source>
-        <translation>File '{0}' saved successfully.</translation>
+        <location filename="../chat_model.py" line="1089"/>
+        <source>Файл &apos;{0}&apos; успешно сохранен.</source>
+        <translation>File &apos;{0}&apos; saved successfully.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="1042"/>
-        <source>Ошибка сохранения файла '{0}': {1}</source>
-        <translation>Error saving file '{0}': {1}</translation>
+        <location filename="../chat_model.py" line="1092"/>
+        <source>Ошибка сохранения файла &apos;{0}&apos;: {1}</source>
+        <translation>Error saving file &apos;{0}&apos;: {1}</translation>
     </message>
     <message>
         <source>Сбор файлов для анализа...</source>
@@ -921,6 +921,24 @@ Your tasks:
     </message>
 </context>
 <context>
+    <name>DiffViewerWindow</name>
+    <message>
+        <location filename="../diff_viewer_window.py" line="25"/>
+        <source>Сравнение версий файла: {0}</source>
+        <translation>File Version Comparison: {0}</translation>
+    </message>
+    <message>
+        <location filename="../diff_viewer_window.py" line="47"/>
+        <source>Оригинал: {0}</source>
+        <translation>Original: {0}</translation>
+    </message>
+    <message>
+        <location filename="../diff_viewer_window.py" line="51"/>
+        <source>Предложенные изменения</source>
+        <translation>Proposed Changes</translation>
+    </message>
+</context>
+<context>
     <name>GeminiWorker</name>
     <message>
         <source>Неизвестно</source>
@@ -1254,7 +1272,7 @@ Your tasks:
     </message>
     <message>
         <location filename="../main.py" line="308"/>
-        <location filename="../main.py" line="758"/>
+        <location filename="../main.py" line="759"/>
         <source>Развернуть настройки ▼</source>
         <translation>Expand Settings ▼</translation>
     </message>
@@ -1317,7 +1335,7 @@ Your tasks:
     </message>
     <message>
         <location filename="../main.py" line="375"/>
-        <location filename="../main.py" line="760"/>
+        <location filename="../main.py" line="761"/>
         <source>Свернуть инструкции ▲</source>
         <translation>Collapse Instructions ▲</translation>
     </message>
@@ -1405,7 +1423,7 @@ Your tasks:
     </message>
     <message>
         <location filename="../main.py" line="218"/>
-        <location filename="../main.py" line="1005"/>
+        <location filename="../main.py" line="1014"/>
         <source>Свернуть панель проектов</source>
         <translation>Collapse Projects Panel</translation>
     </message>
@@ -1421,7 +1439,7 @@ Your tasks:
     </message>
     <message>
         <location filename="../main.py" line="261"/>
-        <location filename="../main.py" line="654"/>
+        <location filename="../main.py" line="655"/>
         <source>GitHub Репозиторий</source>
         <translation>GitHub Repository</translation>
     </message>
@@ -1581,33 +1599,33 @@ will be included in the context.</translation>
         <translation>Failed to save language setting: {0}</translation>
     </message>
     <message>
-        <location filename="../main.py" line="646"/>
+        <location filename="../main.py" line="647"/>
         <source>Сеть доступна</source>
         <translation>Network Available</translation>
     </message>
     <message>
-        <location filename="../main.py" line="649"/>
+        <location filename="../main.py" line="650"/>
         <source>Нет подключения к сети</source>
         <translation>No network connection</translation>
     </message>
     <message>
-        <location filename="../main.py" line="682"/>
+        <location filename="../main.py" line="683"/>
         <source>открытием проекта &apos;{0}&apos;</source>
         <translation>opening project &apos;{0}&apos;</translation>
     </message>
     <message>
-        <location filename="../main.py" line="812"/>
-        <location filename="../main.py" line="1001"/>
+        <location filename="../main.py" line="813"/>
+        <location filename="../main.py" line="1010"/>
         <source>Развернуть панель проектов</source>
         <translation>Expand Projects Panel</translation>
     </message>
     <message>
-        <location filename="../main.py" line="907"/>
+        <location filename="../main.py" line="916"/>
         <source>Сохранить сгенерированный файл</source>
         <translation>Save Generated File</translation>
     </message>
     <message>
-        <location filename="../main.py" line="910"/>
+        <location filename="../main.py" line="919"/>
         <source>Все файлы (*.*)</source>
         <translation>All Files (*.*)</translation>
     </message>
@@ -1620,12 +1638,12 @@ will be included in the context.</translation>
         <translation type="vanished">&lt;b&gt;{0} v2.1&lt;/b&gt;&lt;br&gt;...</translation>
     </message>
     <message>
-        <location filename="../main.py" line="758"/>
+        <location filename="../main.py" line="759"/>
         <source>Свернуть настройки ▲</source>
         <translation>Collapse Settings ▲</translation>
     </message>
     <message>
-        <location filename="../main.py" line="760"/>
+        <location filename="../main.py" line="761"/>
         <source>Развернуть инструкции ▼</source>
         <translation>Expand Instructions ▼</translation>
     </message>
@@ -1686,17 +1704,17 @@ will be included in the context.</translation>
         <translation type="vanished">Template management component not loaded.</translation>
     </message>
     <message>
-        <location filename="../main.py" line="856"/>
+        <location filename="../main.py" line="865"/>
         <source>выходом из приложения</source>
         <translation>exiting the application</translation>
     </message>
     <message>
-        <location filename="../main.py" line="866"/>
+        <location filename="../main.py" line="875"/>
         <source>Несохраненные изменения</source>
         <translation>Unsaved Changes</translation>
     </message>
     <message>
-        <location filename="../main.py" line="866"/>
+        <location filename="../main.py" line="875"/>
         <source>Имеются несохраненные изменения.
 Сохранить их перед {0}?</source>
         <translation>There are unsaved changes.

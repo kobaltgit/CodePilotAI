@@ -17,6 +17,13 @@ class PyBridge(QObject):
     """
     messageApiExclusionToggleRequested = Signal(int)
     saveFileRequested = Signal(str, str) # filename, content
+    showDiffRequested = Signal(str, str) # filename, new_code_content
+
+    @Slot(str, str)
+    def request_show_diff(self, filename: str, new_code: str):
+        """Слот, вызываемый из JS для показа окна сравнения версий."""
+        logger.debug(f"PyBridge: Получен запрос на показ diff для файла '{filename}'")
+        self.showDiffRequested.emit(filename, new_code)
 
     @Slot(str, str)
     def request_save_file(self, filename, content):
@@ -61,6 +68,7 @@ class ChatView(QWebEngineView):
         
         self.py_bridge.messageApiExclusionToggleRequested.connect(self._view_model.toggleApiExclusion)
         self.py_bridge.saveFileRequested.connect(self._view_model.saveGeneratedFileRequested)
+        self.py_bridge.showDiffRequested.connect(self._view_model.showDiffRequested)
         
         self._connect_viewmodel_signals()
         self.pageLoaded.connect(self._view_model.setChatViewReady)
@@ -146,6 +154,7 @@ class ChatView(QWebEngineView):
             "copy_button_text": self.tr("Копировать код"),
             "copied_button_text": self.tr("Скопировано!"),
             "save_button_text": self.tr("Сохранить как..."),
+            "diff_button_text": self.tr("Показать изменения"),
         }
         
         js_safe_html = json.dumps(html_content)

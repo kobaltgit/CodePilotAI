@@ -535,6 +535,7 @@ class MainWindow(QMainWindow):
         # Сигналы от ViewModel к UI
         self.view_model.windowTitleChanged.connect(self._update_window_title)
         self.view_model.showSaveFileDialogForGeneratedCode.connect(self._show_save_generated_file_dialog)
+        self.view_model.showDiffWindow.connect(self._show_diff_viewer_window)
         self.view_model.geminiApiKeyStatusTextChanged.connect(self._update_gemini_api_key_status)
         self.view_model.githubTokenStatusTextChanged.connect(self._update_github_token_status)
         self.view_model.clearApiKeyInput.connect(self.api_key_lineedit.clear)
@@ -817,6 +818,14 @@ class MainWindow(QMainWindow):
                 self.main_splitter.restoreState(splitter_state)
 
         self._load_recent_projects()
+
+    @Slot(str, str, str)
+    def _show_diff_viewer_window(self, original_code: str, new_code: str, file_path: str):
+        """Создает и показывает окно сравнения версий."""
+        from diff_viewer_window import DiffViewerWindow
+        # Мы не храним ссылку на это окно, так как оно само удалится при закрытии (WA_DeleteOnClose)
+        diff_window = DiffViewerWindow(original_code, new_code, file_path, self)
+        diff_window.show()
 
     def _save_settings(self):
         """Сохраняет настройки положения и состояния окна."""
