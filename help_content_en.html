@@ -78,6 +78,7 @@
         <li><b>Projects Panel (left):</b> A list of recent sessions. Collapses with the <b>◀</b>/<b>▶</b> button. A saved project is loaded into the program by double-clicking.</li>
         <li><b>"GitHub Repository" / "Local Folder" Tabs:</b> Select the source for analysis.</li>
         <li><b>Analyze / Cancel Analysis:</b> Buttons to start and stop the context preparation process.</li>
+        <li><b>Update (🔃 icon):</b> Appears for local Git repositories. Allows you to quickly re-analyze only the changed files without processing the entire project.</li>
         <li><b>Analysis Progress Bar:</b> Appears during analysis and shows its current progress.</li>
         <li><b>View Analyzed Files (👁️):</b> Opens a window where you can see a list of all files and their brief descriptions (summaries) created by the AI (only works in RAG mode).</li>
         <li><b>Settings (collapsible panel):</b>
@@ -96,6 +97,8 @@
         <li><b>Dialogue Window:</b>
             <ul>
                 <li>The <code>🛇</code> / <code>👁</code> button to the right of a message allows you to exclude it from the context for subsequent requests, saving AI "memory".</li>
+                <li>The <b>"Save as..."</b> button appears next to code blocks if the AI suggests creating a new file.</li>
+                <li><b>System messages</b> (<i>[System]: ...</i>) inform you and the AI about important events, such as a context update.</li>
             </ul>
         </li>
         <li><b>Query Input Field:</b> <span class="shortcut">Ctrl+Enter</span> for quick message sending.</li>
