@@ -227,7 +227,7 @@
             }
             messageDiv.appendChild(contentElement);
 
-            if (role === 'model') addCopyButtons(contentElement, texts);
+            if (role === 'model') addCodeBlockButtons(contentElement, texts);
 
             if (messageIndex >= 0) { // Не добавляем кнопки для системных сообщений
                 const scrollTopButton = document.createElement('button');
@@ -284,15 +284,52 @@
              if (chatContainer) requestAnimationFrame(() => { chatContainer.scrollTop = chatContainer.scrollHeight; });
         }
 
-        function addCopyButtons(containerElement, texts) {
-            containerElement.querySelectorAll('.codehilite').forEach(block => {
-                if (block.querySelector('.copy-code-button')) return;
-                const button = document.createElement('button');
-                button.textContent = texts.copy_button_text;
-                button.classList.add('copy-code-button');
-                button.onclick = () => copyCode(button, texts);
-                block.appendChild(button);
+        function addCodeBlockButtons(containerElement, texts) {
+            const codeBlocks = containerElement.querySelectorAll('.codehilite');
+            codeBlocks.forEach(block => {
+                // Кнопка Копировать (без изменений)
+                if (!block.querySelector('.copy-code-button')) {
+                    const copyButton = document.createElement('button');
+                    copyButton.textContent = texts.copy_button_text;
+                    copyButton.classList.add('copy-code-button');
+                    copyButton.onclick = () => copyCode(copyButton, texts);
+                    block.appendChild(copyButton);
+                }
+
+                // --- НОВАЯ ЛОГИКА ДЛЯ КНОПКИ "СОХРАНИТЬ КАК" ---
+                if (!block.querySelector('.save-file-button')) {
+                    const precedingElement = block.previousElementSibling;
+                    let suggestedFilename = '';
+
+                    if (precedingElement && precedingElement.tagName === 'P') {
+                        const match = precedingElement.innerText.match(/File:\s*([\w\d\.\/\\_-]+)/);
+                        if (match && match[1]) {
+                            suggestedFilename = match[1];
+                        }
+                    }
+                    
+                    if (suggestedFilename) {
+                        const saveButton = document.createElement('button');
+                        saveButton.textContent = texts.save_button_text;
+                        // Стилизуем кнопку, чтобы она была рядом с кнопкой копирования
+                        saveButton.classList.add('copy-code-button'); // Используем тот же стиль
+                        saveButton.style.right = '110px'; // Сдвигаем влево
+                        saveButton.classList.add('save-file-button'); // Уникальный класс
+                        saveButton.onclick = () => saveFile(block, suggestedFilename);
+                        block.appendChild(saveButton);
+                        // Удаляем p-тег с именем файла, чтобы он не мозолил глаза
+                        precedingElement.style.display = 'none';
+                    }
+                }
             });
+        }
+
+        function saveFile(codeBlockDiv, filename) {
+            if (!codeBlockDiv) return;
+            const preElement = codeBlockDiv.querySelector('pre');
+            if (!preElement || !pyBridge) return;
+            const codeContent = preElement.innerText || preElement.textContent;
+            pyBridge.request_save_file(filename, codeContent);
         }
 
         function copyCode(buttonElement, texts) {
@@ -300,7 +337,10 @@
             if (!codeBlockDiv) return;
             const preElement = codeBlockDiv.querySelector('pre');
             if (!preElement || !pyBridge) return;
-            pyBridge.copy_code_to_clipboard(preElement.innerText || preElement.textContent);
+            
+            const codeContent = preElement.innerText || preElement.textContent;
+            pyBridge.copy_code_to_clipboard(codeContent);
+
             buttonElement.textContent = texts.copied_button_text;
             setTimeout(() => { buttonElement.textContent = texts.copy_button_text; }, 1500);
         }

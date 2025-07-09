@@ -16,6 +16,13 @@ class PyBridge(QObject):
     Класс-мостик между Python и JavaScript в QWebEngineView.
     """
     messageApiExclusionToggleRequested = Signal(int)
+    saveFileRequested = Signal(str, str) # filename, content
+
+    @Slot(str, str)
+    def request_save_file(self, filename, content):
+        """Слот, вызываемый из JS для сохранения сгенерированного файла."""
+        logger.debug(f"PyBridge: Получен запрос на сохранение файла '{filename}'")
+        self.saveFileRequested.emit(filename, content)
 
     @Slot(str)
     def copy_code_to_clipboard(self, code_text):
@@ -36,7 +43,6 @@ class PyBridge(QObject):
         logger.debug(f"PyBridge: Получен запрос на переключение API exclusion для индекса: {index}")
         self.messageApiExclusionToggleRequested.emit(index)
 
-
 class ChatView(QWebEngineView):
     """
     Основной класс виджета чата, основанный на QWebEngineView.
@@ -54,6 +60,7 @@ class ChatView(QWebEngineView):
         self.channel.registerObject("py_bridge", self.py_bridge)
         
         self.py_bridge.messageApiExclusionToggleRequested.connect(self._view_model.toggleApiExclusion)
+        self.py_bridge.saveFileRequested.connect(self._view_model.saveGeneratedFileRequested)
         
         self._connect_viewmodel_signals()
         self.pageLoaded.connect(self._view_model.setChatViewReady)
@@ -138,6 +145,7 @@ class ChatView(QWebEngineView):
             "scroll_top_tooltip": self.tr("К началу этого сообщения"),
             "copy_button_text": self.tr("Копировать код"),
             "copied_button_text": self.tr("Скопировано!"),
+            "save_button_text": self.tr("Сохранить как..."),
         }
         
         js_safe_html = json.dumps(html_content)

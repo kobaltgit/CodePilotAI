@@ -522,6 +522,11 @@ class ChatModel(QObject):
         return cleaned_list
 
     def _build_system_instructions(self) -> str:
+        # --- Наша внутренняя, "секретная" инструкция ---
+        file_save_instruction_ru = "ВАЖНОЕ ПРАВИЛО: Если ты генерируешь код для совершенно нового файла, всегда указывай предлагаемое имя файла на отдельной строке прямо перед блоком кода в формате `File: path/to/filename.ext`."
+        file_save_instruction_en = "IMPORTANT RULE: If you generate code for a brand new file, always specify the suggested filename on a separate line right before the code block, in the format `File: path/to/filename.ext`."
+        internal_instruction = file_save_instruction_ru if self._app_language == 'ru' else file_save_instruction_en
+
         lang_instruction_phrase = self.tr("на русском языке") if self._app_language == 'ru' else "in English"
         base_instructions = ""
         if self._project_context:
@@ -534,12 +539,16 @@ class ChatModel(QObject):
                 "Ты — полезный и разносторонний ассистент. Отвечай на вопросы четко и по делу. "
                 "Отвечай {0}, если не указано иное."
             ).format(lang_instruction_phrase)
+        
+        user_instructions_text = self._instructions.strip()
 
-        if self._instructions.strip():
+        # Собираем финальный промпт
+        final_parts = [internal_instruction, base_instructions]
+        if user_instructions_text:
             user_instructions_header = self.tr("Дополнительные инструкции:")
-            return f"{base_instructions}\n\n{user_instructions_header}\n{self._instructions.strip()}"
+            final_parts.append(f"{user_instructions_header}\n{user_instructions_text}")
 
-        return base_instructions
+        return "\n\n".join(part for part in final_parts if part)
 
     def _build_context_string(self, remaining_budget_tokens: int) -> str:
         """
@@ -816,3 +825,19 @@ class ChatModel(QObject):
         if enabled != self._semantic_search_enabled:
             self._semantic_search_enabled = enabled
             self._mark_dirty()
+
+    def save_generated_file(self, file_path: str, content: str) -> Tuple[bool, str]:
+        """Saves content to a specified file path."""
+        try:
+            dir_name = os.path.dirname(file_path)
+            if dir_name:
+                os.makedirs(dir_name, exist_ok=True)
+            
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+            
+            logger.info(f"Successfully saved generated file to: {file_path}")
+            return True, self.tr("Файл '{0}' успешно сохранен.").format(os.path.basename(file_path))
+        except Exception as e:
+            logger.error(f"Error saving generated file to {file_path}: {e}", exc_info=True)
+            return False, self.tr("Ошибка сохранения файла '{0}': {1}").format(os.path.basename(file_path), e)

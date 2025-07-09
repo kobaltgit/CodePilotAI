@@ -82,6 +82,7 @@ class ChatViewModel(QObject):
 
     # --- Сигналы для выполнения действий в View ---
     showFileDialog = Signal(str, str, str)
+    showSaveFileDialogForGeneratedCode = Signal(str, str) # default_filename, code_content
     showMessageDialog = Signal(str, str, str)
     clearApiKeyInput = Signal()
     clearTokenInput = Signal()
@@ -395,6 +396,33 @@ class ChatViewModel(QObject):
             success, saved_path = self._model.save_session(filepath)
             if success and saved_path:
                 self.sessionSavedSuccessfully.emit(saved_path)
+
+    @Slot(str, str)
+    def saveGeneratedFileRequested(self, filename: str, content: str):
+        """
+        Слот, который вызывается, когда пользователь нажимает "Сохранить как..."
+        в окне чата.
+        """
+        logger.debug(f"ViewModel: получен запрос на сохранение файла '{filename}'.")
+        # Передаем сигнал главному окну, чтобы оно показало диалог
+        self.showSaveFileDialogForGeneratedCode.emit(filename, content)
+
+    @Slot(str, str)
+    def generatedFileSelectedToSave(self, filepath: str, content: str):
+        """
+        Слот, который вызывается из MainWindow после того, как пользователь
+        выбрал путь для сохранения сгенерированного файла.
+        """
+        if not filepath:
+            logger.debug("ViewModel: Сохранение сгенерированного файла отменено в диалоге.")
+            return
+
+        success, message = self._model.save_generated_file(filepath, content)
+        
+        if success:
+            self.statusMessageChanged.emit(message, 5000)
+        else:
+            self.showMessageDialog.emit("crit", self.tr("Ошибка сохранения файла"), message)
 
     @Slot()
     def toggleSettings(self):

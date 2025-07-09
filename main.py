@@ -528,6 +528,7 @@ class MainWindow(QMainWindow):
         
         # Сигналы от ViewModel к UI
         self.view_model.windowTitleChanged.connect(self._update_window_title)
+        self.view_model.showSaveFileDialogForGeneratedCode.connect(self._show_save_generated_file_dialog)
         self.view_model.geminiApiKeyStatusTextChanged.connect(self._update_gemini_api_key_status)
         self.view_model.githubTokenStatusTextChanged.connect(self._update_github_token_status)
         self.view_model.clearApiKeyInput.connect(self.api_key_lineedit.clear)
@@ -858,6 +859,32 @@ class MainWindow(QMainWindow):
     # Это демонстрация хорошей архитектуры MVP/MVVM.
     @Slot(str, str, str)
     def _show_message_dialog(self, msg_type, title, message): QMessageBox.information(self, title, message)
+
+    @Slot(str, str)
+    def _show_save_generated_file_dialog(self, default_filename: str, content: str):
+        """
+        Открывает диалог сохранения для файла, сгенерированного ИИ.
+        """
+        # Определяем начальную директорию
+        project_path = self.view_model._model.get_local_path()
+        if not project_path or not os.path.isdir(project_path):
+            project_path = os.path.expanduser("~") # Fallback на домашнюю директорию
+
+        # Собираем путь по умолчанию
+        default_save_path = os.path.join(project_path, default_filename)
+
+        # Открываем диалог
+        filepath, _ = QFileDialog.getSaveFileName(
+            self,
+            self.tr("Сохранить сгенерированный файл"),
+            default_save_path,
+            self.tr("Все файлы (*.*)")
+        )
+
+        # Если пользователь выбрал путь, передаем его обратно в ViewModel
+        if filepath:
+            self.view_model.generatedFileSelectedToSave(filepath, content)
+
     @Slot()
     def _show_help_content(self):
         HelpDialog(self._app_language, self).exec()
