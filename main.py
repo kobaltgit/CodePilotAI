@@ -276,9 +276,13 @@ class MainWindow(QMainWindow):
         # --- Общие кнопки анализа ---
         analysis_layout = QHBoxLayout()
         self.analyze_repo_button = QPushButton(self.tr("Анализировать"))
-        # self.analyze_repo_button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        
+        self.update_context_button = QPushButton(self.tr("Обновить"))
+        self.update_context_button.setToolTip(self.tr("Найти измененные файлы в локальном Git-репозитории и обновить контекст"))
+        update_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_BrowserReload)
+        self.update_context_button.setIcon(update_icon)
+
         self.cancel_analysis_button = QPushButton(self.tr("Отмена анализа"))
-        # self.cancel_analysis_button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
         # --- НОВОЕ: Прогресс-бар ---
         self.analysis_progress_bar = QProgressBar()
@@ -293,6 +297,7 @@ class MainWindow(QMainWindow):
         
         # --- ДОБАВЛЕНО: Добавляем прогресс-бар в компоновку ---
         analysis_layout.addWidget(self.analyze_repo_button, 1)
+        analysis_layout.addWidget(self.update_context_button, 1)
         analysis_layout.addWidget(self.cancel_analysis_button, 1)
         analysis_layout.addWidget(self.analysis_progress_bar, 2)
         # analysis_layout.addStretch(1) # Распорка, чтобы прижать кнопку вправо
@@ -504,6 +509,7 @@ class MainWindow(QMainWindow):
         self.api_key_save_button.clicked.connect(lambda: self.view_model.saveGeminiApiKey(self.api_key_lineedit.text()))
         self.github_token_save_button.clicked.connect(lambda: self.view_model.saveGithubToken(self.github_token_lineedit.text()))
         self.analyze_repo_button.clicked.connect(self.view_model.startAnalysis)
+        self.update_context_button.clicked.connect(self.view_model.startContextUpdate)
         self.cancel_analysis_button.clicked.connect(self.view_model.cancelAnalysis)
         self.send_button.clicked.connect(lambda: self.view_model.sendMessage(self.input_textedit.toPlainText().strip()))
         self.cancel_button.clicked.connect(self.view_model.cancelRequest)
@@ -538,6 +544,7 @@ class MainWindow(QMainWindow):
         self.view_model.canCancelRequestChanged.connect(self._update_button_states)
         self.view_model.canAnalyzeChanged.connect(self._update_button_states)
         self.view_model.canCancelAnalysisChanged.connect(self._update_button_states)
+        self.view_model.canUpdateFromGitChanged.connect(self._update_button_states)
         # --- НОВЫЕ ПОДКЛЮЧЕНИЯ ---
         self.view_model.analysisStateChanged.connect(self._on_analysis_state_changed)
         self.view_model.analysisProgress_for_bar_changed.connect(self._update_analysis_progress_bar)
@@ -682,6 +689,7 @@ class MainWindow(QMainWindow):
         self.cancel_button.setEnabled(self.view_model.canCancelRequest)
         self.analyze_repo_button.setEnabled(self.view_model.canAnalyze)
         self.cancel_analysis_button.setEnabled(self.view_model.canCancelAnalysis)
+        self.update_context_button.setEnabled(self.view_model.canUpdateFromGit)
         has_history = bool(self.view_model.getChatHistoryForView()[0])
         has_summaries = bool(self.view_model._model._project_context)
         self.view_summaries_button.setEnabled(has_summaries)

@@ -40,6 +40,7 @@ class ChatViewModel(QObject):
     canCancelRequestChanged = Signal()
     canAnalyzeChanged = Signal()
     canCancelAnalysisChanged = Signal()
+    canUpdateFromGitChanged = Signal()
 
     # --- НОВЫЕ СИГНАЛЫ ДЛЯ ПРОЕКТА ---
     projectTypeChanged = Signal(str) # 'github' или 'local'
@@ -257,6 +258,18 @@ class ChatViewModel(QObject):
     @Property(bool, notify=canCancelAnalysisChanged)
     def canCancelAnalysis(self) -> bool: return self._is_analysis_running
 
+    @Property(bool, notify=canUpdateFromGitChanged)
+    def canUpdateFromGit(self) -> bool:
+        """
+        Возвращает True, если можно запустить обновление из Git.
+        """
+        return (
+            self._model.is_git_repo() and
+            bool(self._model.get_project_context()) and # Обновлять можно только существующий контекст
+            not self._is_analysis_running and
+            not self._is_request_running
+        )
+
     @Property(str, notify=toggleAllButtonPropsChanged)
     def toggleAllButtonText(self) -> str:
         """Возвращает текст для кнопки 'Скрыть/Показать все'."""
@@ -317,6 +330,12 @@ class ChatViewModel(QObject):
     def cancelAnalysis(self):
         logger.info("Команда: отменить анализ.")
         self._model.cancel_analysis()
+
+    @Slot()
+    def startContextUpdate(self):
+        """Слот для запуска обновления контекста из Git."""
+        logger.info("Команда: обновить контекст из Git.")
+        self._model.start_context_update_from_git()
 
     @Slot(str)
     def sendMessage(self, user_input: str):
@@ -480,7 +499,8 @@ class ChatViewModel(QObject):
         self._is_analysis_running = False
         self.analysisStateChanged.emit(False)
         self._update_all_button_states()
-        self.chatUpdateRequired.emit()   
+        self.chatUpdateRequired.emit()
+        self.canUpdateFromGitChanged.emit()   
 
     @Slot(str)
     def _on_analysis_error(self, error_message: str):
@@ -566,6 +586,7 @@ class ChatViewModel(QObject):
         self.canCancelRequestChanged.emit()
         self.canAnalyzeChanged.emit()
         self.canCancelAnalysisChanged.emit()
+        self.canUpdateFromGitChanged.emit()
 
     def _parse_and_emit_extensions(self):
         model_extensions = self._model.get_extensions()

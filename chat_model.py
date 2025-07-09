@@ -8,6 +8,12 @@ import hashlib
 from typing import Optional, List, Dict, Any, Tuple, Union
 from io import BytesIO
 
+try:
+    import git
+except ImportError:
+    git = None
+    logging.warning("Библиотека 'GitPython' не найдена. Функция обновления из Git будет недоступна.")
+
 from PySide6.QtCore import QObject, Signal, Slot, QThread, QDir
 
 import db_manager
@@ -146,6 +152,7 @@ class ChatModel(QObject):
         self._is_dirty: bool = False
         # Специфичные для проекта
         self._project_type: Optional[str] = None  # 'github' или 'local'
+        self._is_git_repo: bool = False
         self._repo_url: Optional[str] = None
         self._repo_branch: Optional[str] = None
         self._local_path: Optional[str] = None
@@ -356,6 +363,91 @@ class ChatModel(QObject):
         if self._analysis_worker and self._analysis_thread and self._analysis_thread.isRunning():
             self._analysis_worker.cancel()
             self.statusMessage.emit(self.tr("Отмена анализа..."), 3000)
+
+    def start_context_update_from_git(self):
+        """
+        Находит измененные и новые файлы в локальном Git-репозитории и запускает
+        их частичный переанализ.
+        """
+        if not self.is_git_repo():
+            self.analysisError.emit(self.tr("Текущий проект не является локальным Git-репозиторием."))
+            return
+            
+        if self._analysis_thread and self._analysis_thread.isRunning():
+            self.statusMessage.emit(self.tr("Анализ уже запущен."), 3000)
+            return
+
+        try:
+            repo = git.Repo(self._local_path)
+            
+            # Находим измененные (modified) и новые (untracked) файлы
+            modified_files = [item.a_path for item in repo.index.diff(None)]
+            untracked_files = repo.untracked_files
+            changed_paths = set(modified_files + untracked_files)
+
+            if not changed_paths:
+                self.statusMessage.emit(self.tr("Нет изменений для обновления."), 3000)
+                return
+
+            # Фильтруем файлы по выбранным расширениям
+            files_to_reanalyze = [
+                os.path.join(self._local_path, p) for p in changed_paths 
+                if p.lower().endswith(self._extensions)
+            ]
+
+            if not files_to_reanalyze:
+                self.statusMessage.emit(self.tr("Нет измененных файлов с нужными расширениями."), 3000)
+                return
+
+            logger.info(f"Обнаружено {len(files_to_reanalyze)} измененных файлов для переанализа.")
+            self.analysisStarted.emit()
+            self.statusMessage.emit(self.tr("Обновление контекста для {0} файлов...").format(len(files_to_reanalyze)), 0)
+
+            # Удаляем старый контекст для этих файлов
+            # Нормализуем пути для корректного сравнения
+            relative_paths_to_remove = {os.path.relpath(fp, self._local_path) for fp in files_to_reanalyze}
+            
+            self._project_context = [
+                item for item in self._project_context 
+                if item.get('file_path') not in relative_paths_to_remove
+            ]
+            for rel_path in relative_paths_to_remove:
+                self._file_summaries_for_display.pop(rel_path, None)
+
+            # Запускаем воркер для анализа только измененных файлов
+            self._analysis_thread = QThread()
+            self._analysis_worker = SummarizerWorker(
+                file_paths=files_to_reanalyze, # Передаем только измененные файлы
+                project_type=self._project_type,
+                project_source_path=self._local_path,
+                repo_object=None,
+                repo_branch=None,
+                github_manager=None,
+                rag_enabled=self._rag_enabled,
+                semantic_search_enabled=self._semantic_search_enabled,
+                gemini_api_key=self._gemini_api_key,
+                model_name=self._model_name,
+                app_lang=self._app_language
+            )
+            self._analysis_worker.moveToThread(self._analysis_thread)
+            self._analysis_worker.context_data_ready.connect(self._on_context_data_ready)
+            self._analysis_worker.file_summarized.connect(self._on_file_summarized)
+            self._analysis_worker.progress_updated.connect(self.analysisProgressUpdated)
+            self._analysis_worker.error_occurred.connect(self.analysisError)
+            self._analysis_thread.started.connect(self._analysis_worker.run)
+            self._analysis_worker.finished.connect(self._on_analysis_finished)
+            self._analysis_worker.finished.connect(self._analysis_thread.quit)
+            self._analysis_thread.finished.connect(self._analysis_worker.deleteLater)
+            self._analysis_thread.finished.connect(self._analysis_thread.deleteLater)
+            self._analysis_thread.finished.connect(lambda: setattr(self, '_analysis_worker', None))
+            self._analysis_thread.finished.connect(lambda: setattr(self, '_analysis_thread', None))
+            self._analysis_thread.start()
+
+        except git.InvalidGitRepositoryError:
+            self.analysisError.emit(self.tr("Ошибка: Папка перестала быть Git-репозиторием."))
+        except Exception as e:
+            logger.error(f"Ошибка при обновлении контекста из Git: {e}", exc_info=True)
+            self.analysisError.emit(self.tr("Неожиданная ошибка при работе с Git: {0}").format(e))
 
     @Slot(list)
     def _on_context_data_ready(self, context_data_batch: List[Dict[str, Any]]):
@@ -682,6 +774,14 @@ class ChatModel(QObject):
         self._project_type = 'local'
         self._repo_url, self._repo_branch, self._repo_object, self._available_branches = None, None, None, []
         self._local_path = path
+
+        # Проверяем, является ли это Git-репозиторием
+        if git and os.path.isdir(os.path.join(path, '.git')):
+            self._is_git_repo = True
+            logger.info(f"Локальный проект '{path}' определен как Git-репозиторий.")
+        else:
+            self._is_git_repo = False
+        
         self.projectDataChanged.emit()
 
     def _clear_project_context(self):
@@ -814,10 +914,16 @@ class ChatModel(QObject):
     def set_rag_enabled(self, enabled: bool):
         if enabled != self._rag_enabled: self._rag_enabled = enabled; self._mark_dirty()
     def get_chat_history(self) -> List[Dict[str, Any]]: return self._chat_history[:]
+    def get_project_context(self) -> List[Dict[str, Any]]:
+        """Возвращает текущий контекст проекта (список саммари и чанков)."""
+        return self._project_context[:]
     def _mark_dirty(self):
         if not self._is_dirty: self._is_dirty = True; self.sessionStateChanged.emit(self._current_session_filepath, True)
     def is_dirty(self) -> bool: return self._is_dirty
     def get_current_session_filepath(self) -> Optional[str]: return self._current_session_filepath
+    def is_git_repo(self) -> bool:
+        """Возвращает True, если текущий локальный проект является Git-репозиторием."""
+        return self._project_type == 'local' and self._is_git_repo
 
     def get_semantic_search_enabled(self) -> bool: return self._semantic_search_enabled
 

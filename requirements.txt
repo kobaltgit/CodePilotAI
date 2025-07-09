@@ -27,3 +27,6 @@ python-docx
 pypdf2
 
 numpy
+
+# Для взаимодействия с Git
+GitPython
