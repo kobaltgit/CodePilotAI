@@ -112,7 +112,7 @@ def load_session_data(
 ) -> Optional[Tuple[Dict[str, Any], List[Dict[str, Any]], List[Dict[str, Any]]]]:
     """
     Загружает метаданные, сообщения и контекст из файла сессии.
-    Возвращает кортеж (metadata, messages, context_data) или None при ошибке.
+    Автоматически определяет старый формат и выполняет миграцию.
     """
     if not os.path.exists(filepath):
         logger.error(f"Файл сессии не найден: {filepath}")
@@ -127,62 +127,87 @@ def load_session_data(
         with _get_connection(filepath) as conn:
             if not conn: return None
 
-            metadata_cursor = conn.execute("SELECT * FROM metadata WHERE id = 1")
-            metadata = metadata_cursor.fetchone() or {}
+            # --- Проверяем, какой формат у сессии (новый или старый) ---
+            cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='context_data';")
+            is_new_format = cursor.fetchone() is not None
 
-            messages_cursor = conn.execute("SELECT role, content, excluded_from_api FROM messages ORDER BY order_index ASC")
-            messages_list = [
-                {
-                    "role": row["role"],
-                    "parts": [row["content"]],
-                    "excluded": bool(row.get("excluded_from_api", False))
-                }
-                for row in messages_cursor.fetchall()
-            ]
-
-            # Загружаем все данные из новой таблицы context_data>
-            context_cursor = conn.execute("SELECT file_path, type, chunk_num, content, embedding FROM context_data ORDER BY file_path, chunk_num ASC")
-            context_data_list = []
-            for row in context_cursor.fetchall():
-                item = dict(row)
-
-                # --- НОВАЯ ЛОГИКА: Обработка JSON для типа 'structure' ---
-                if item.get('type') == 'structure' and isinstance(item.get('content'), str):
-                    try:
-                        item['content'] = json.loads(item['content'])
-                    except json.JSONDecodeError:
-                        logger.warning(f"Не удалось декодировать JSON для структуры файла {item.get('file_path')}. Элемент будет пропущен.")
-                        continue # Пропускаем поврежденный элемент
-                # --- КОНЕЦ НОВОЙ ЛОГИКИ ---
-
-                # Десериализация эмбеддинга
-                if 'embedding' in item and item['embedding'] is not None:
-                    try:
-                        buffer = BytesIO(item['embedding'])
-                        item['embedding'] = np.load(buffer, allow_pickle=True) # Добавлено allow_pickle для совместимости
-                    except Exception as e:
-                        logger.warning(f"Не удалось десериализовать эмбеддинг для '{item.get('file_path')}': {e}. Эмбеддинг будет проигнорирован.")
+            # --- ЗАГРУЗКА ДЛЯ НОВОГО ФОРМАТА ---
+            if is_new_format:
+                logger.debug("Обнаружен новый формат сессии (таблица 'context_data').")
+                
+                # Загружаем метаданные
+                metadata = conn.execute("SELECT * FROM metadata WHERE id = 1").fetchone() or {}
+                
+                # Загружаем сообщения
+                messages_cursor = conn.execute("SELECT role, content, excluded_from_api FROM messages ORDER BY order_index ASC")
+                messages_list = [
+                    {"role": row["role"], "parts": [row["content"]], "excluded": bool(row.get("excluded_from_api", False))}
+                    for row in messages_cursor.fetchall()
+                ]
+                
+                # Загружаем контекст
+                context_data_list = []
+                table_info_cursor = conn.execute("PRAGMA table_info(context_data);")
+                existing_columns = {col['name'] for col in table_info_cursor.fetchall()}
+                columns_to_select = ['file_path', 'type', 'chunk_num', 'content']
+                if 'embedding' in existing_columns:
+                    columns_to_select.append('embedding')
+                select_query = f"SELECT {', '.join(columns_to_select)} FROM context_data ORDER BY file_path, chunk_num ASC"
+                context_cursor = conn.execute(select_query)
+                for row in context_cursor.fetchall():
+                    item = dict(row)
+                    if item.get('type') == 'structure' and isinstance(item.get('content'), str):
+                        try: item['content'] = json.loads(item['content'])
+                        except json.JSONDecodeError: continue
+                    if 'embedding' in item and item['embedding'] is not None:
+                        try: item['embedding'] = np.load(BytesIO(item['embedding']), allow_pickle=True)
+                        except Exception: item['embedding'] = None
+                    else:
                         item['embedding'] = None
-                else:
-                    item['embedding'] = None # Гарантируем, что ключ есть, но он None
+                    context_data_list.append(item)
 
-                # Ensure chunk_num is int for compatibility
-                if 'chunk_num' in item and item['chunk_num'] is not None:
-                    try:
-                        item['chunk_num'] = int(item['chunk_num'])
-                    except (ValueError, TypeError):
-                        item['chunk_num'] = 0
+                logger.info(f"Сессия нового формата успешно загружена.")
+                return metadata, messages_list, context_data_list
 
-                context_data_list.append(item)
+            # --- МИГРАЦИЯ И ЗАГРУЗКА ДЛЯ СТАРОГО ФОРМАТА ---
+            else:
+                logger.warning("Обнаружен старый формат сессии. Выполняется миграция 'на лету'...")
+                
+                # Загружаем метаданные
+                metadata = conn.execute("SELECT * FROM metadata WHERE id = 1").fetchone() or {}
+                
+                # Загружаем сообщения
+                messages_cursor = conn.execute("SELECT role, content, excluded_from_api FROM messages ORDER BY order_index ASC")
+                messages_list = [
+                    {"role": row["role"], "parts": [row["content"]], "excluded": bool(row.get("excluded_from_api", False))}
+                    for row in messages_cursor.fetchall()
+                ]
 
-        logger.info(f"Сессия загружена. Метаданные: {len(metadata)} полей, Сообщений: {len(messages_list)}, Элементов контекста: {len(context_data_list)}")
-        return metadata, messages_list, context_data_list
+                # Мигрируем file_summaries в context_data
+                context_data_list = []
+                summaries_cursor = conn.execute("SELECT file_path, summary FROM file_summaries ORDER BY file_path ASC")
+                for row in summaries_cursor.fetchall():
+                    context_data_list.append({
+                        'file_path': row['file_path'], 'type': 'summary',
+                        'chunk_num': 0, 'content': row['summary'], 'embedding': None
+                    })
+                
+                metadata['migrated_from_old_format'] = True
+                logger.info(f"Сессия старого формата успешно смигрирована и загружена.")
+                return metadata, messages_list, context_data_list
+
+    except sqlite3.Error as e:
+        logger.error(f"Критическая ошибка SQLite при загрузке сессии {filepath}: {e}", exc_info=True)
+        return None
+    except Exception as e:
+        logger.error(f"Неожиданная ошибка при загрузке сессии {filepath}: {e}", exc_info=True)
+        return None
 
     except sqlite3.Error as e:
         logger.error(f"Ошибка SQLite при загрузке сессии {filepath}: {e}")
         # Добавляем проверку на старый формат для более дружелюбного сообщения
-        if "no such table: context_data" in str(e):
-             logger.error("Это может быть файл сессии старого формата (.gpcs), который несовместим с CodePilotAI.")
+        if "no such table: context_data" in str(e) or "no such table: file_summaries" in str(e):
+             logger.error("Это может быть файл сессии старого формата, который не удалось смигрировать, или файл поврежден.")
         return None
     except Exception as e:
         logger.error(f"Неожиданная ошибка при загрузке сессии {filepath}: {e}")

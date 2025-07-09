@@ -926,40 +926,76 @@ class ChatModel(QObject):
         self.statusMessage.emit(self.tr("Новая сессия создана."), 3000)
 
     def load_session(self, filepath: str):
-        loaded_data = db_manager.load_session_data(filepath)
-        if not loaded_data:
-            self.sessionError.emit(self.tr("Не удалось загрузить сессию: {0}").format(filepath))
-            return
+        try:
+            logger.debug(f"--- НАЧАЛО ЗАГРУЗКИ СЕССИИ: {os.path.basename(filepath)} ---")
+            
+            logger.debug("Шаг 1: Вызов db_manager.load_session_data...")
+            loaded_data = db_manager.load_session_data(filepath)
+            if not loaded_data:
+                logger.error("Шаг 1 ПРОВАЛЕН: db_manager не вернул данные.")
+                self.sessionError.emit(self.tr("Не удалось загрузить данные из файла сессии: {0}").format(os.path.basename(filepath)))
+                return
+            logger.debug("Шаг 1 УСПЕХ: Данные из файла получены.")
 
-        meta, msgs, context = loaded_data
+            meta, msgs, context = loaded_data
+            
+            logger.debug("Шаг 2: Начинаем парсинг метаданных.")
+            self._project_type = meta.get("project_type")
+            self._repo_url = meta.get("repo_url")
+            self._repo_branch = meta.get("repo_branch")
+            self._local_path = meta.get("local_path")
+            self._rag_enabled = bool(meta.get("rag_enabled", True))
+            self._semantic_search_enabled = bool(meta.get("semantic_search_enabled", False))
+            self._model_name = meta.get("model_name", "gemini-1.5-flash-latest")
+            
+            try:
+                self._max_output_tokens = int(meta.get("max_output_tokens"))
+            except (ValueError, TypeError):
+                self._max_output_tokens = 65536 # Значение по умолчанию
+            
+            ext_str = meta.get("extensions") or ".py .txt .md .json .html .css .js .yaml .yml .pdf .docx"
+            self._extensions = tuple(p.strip() for p in re.split(r"[\s,]+", ext_str) if p.strip())
+            
+            self._instructions = meta.get("instructions", "")
+            logger.debug("Шаг 2 УСПЕХ: Метаданные обработаны.")
+            
+            logger.debug("Шаг 3: Обработка истории и контекста.")
+            self._chat_history = msgs
+            self._project_context = context
+            
+            logger.debug("Шаг 3.1: Создание словаря саммари для отображения...")
+            self._file_summaries_for_display = {
+                item.get('file_path'): item.get('content') 
+                for item in self._project_context 
+                if item.get('type') == 'summary' and item.get('file_path')
+            }
+            logger.debug("Шаг 3.1 УСПЕХ: Словарь саммари создан.")
+            
+            self._current_session_filepath = filepath
+            self._is_dirty = False
+            logger.debug("Шаг 3 УСПЕХ: История, контекст и путь к сессии установлены.")
 
-        self._project_type = meta.get("project_type")
-        self._repo_url = meta.get("repo_url")
-        self._repo_branch = meta.get("repo_branch")
-        self._local_path = meta.get("local_path")
-        self._rag_enabled = bool(meta.get("rag_enabled", True))
-        self._semantic_search_enabled = bool(meta.get("semantic_search_enabled", False))
-        self._model_name = meta.get("model_name", "gemini-1.5-flash-latest")
-        self._max_output_tokens = meta.get("max_output_tokens", 65536)
-        ext_str = meta.get("extensions", ".py .txt .md .json .html .css .js .yaml .yml .pdf .docx")
-        self._extensions = tuple(p.strip() for p in re.split(r"[\s,]+", ext_str) if p.strip())
-        self._instructions = meta.get("instructions", "")
+            logger.debug("Шаг 4: Обработка данных проекта (GitHub).")
+            if self._project_type == 'github' and self._repo_url and self._github_manager:
+                repo_data = self._github_manager.get_repo(self._repo_url)
+                if repo_data:
+                    self._repo_object, _ = repo_data
+                    self._available_branches = self._github_manager.get_available_branches(self._repo_object)
+            logger.debug("Шаг 4 УСПЕХ: Данные проекта обработаны.")
 
-        self._chat_history = msgs
-        self._project_context = context
-        self._file_summaries_for_display = {item['file_path']: item['content'] for item in self._project_context if item['type'] == 'summary'}
+            logger.debug("Шаг 5: Отправка сигнала sessionLoaded.emit()...")
+            self.sessionLoaded.emit()
+            self.statusMessage.emit(self.tr("Сессия '{0}' загружена.").format(os.path.basename(filepath)), 5000)
+            logger.info(f"--- УСПЕШНОЕ ЗАВЕРШЕНИЕ ЗАГРУЗКИ СЕССИИ: {os.path.basename(filepath)} ---")
 
-        self._current_session_filepath = filepath
-        self._is_dirty = False
-
-        if self._project_type == 'github' and self._repo_url and self._github_manager:
-            repo_data = self._github_manager.get_repo(self._repo_url)
-            if repo_data:
-                self._repo_object, _ = repo_data
-                self._available_branches = self._github_manager.get_available_branches(self._repo_object)
-
-        self.sessionLoaded.emit()
-        self.statusMessage.emit(self.tr("Сессия '{0}' загружена.").format(os.path.basename(filepath)), 5000)
+        except Exception as e:
+            # --- САМОЕ ВАЖНОЕ: ЛОГИРОВАНИЕ ПОЛНОЙ ОШИБКИ ---
+            logger.error(
+                f"КРИТИЧЕСКАЯ ОШИБКА в ChatModel.load_session при обработке файла '{os.path.basename(filepath)}'.",
+                exc_info=True  # Эта строка добавит полный traceback в лог
+            )
+            error_message = self.tr("Произошла критическая ошибка при обработке данных сессии. См. лог-файл для деталей.")
+            self.sessionError.emit(error_message)
 
     def save_session(self, filepath: Optional[str] = None) -> Tuple[bool, Optional[str]]:
         save_path = filepath or self._current_session_filepath
