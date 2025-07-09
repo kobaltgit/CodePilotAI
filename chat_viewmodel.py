@@ -84,6 +84,7 @@ class ChatViewModel(QObject):
     # --- Сигналы для выполнения действий в View ---
     showFileDialog = Signal(str, str, str)
     showSaveFileDialogForGeneratedCode = Signal(str, str) # default_filename, code_content
+    showSaveFileDialogForExport = Signal(str, str, str) # default_filename, filter, content
     showDiffWindow = Signal(str, str, str) # original_code, new_code, file_path
     showMessageDialog = Signal(str, str, str)
     clearApiKeyInput = Signal()
@@ -462,6 +463,42 @@ class ChatViewModel(QObject):
             self.statusMessageChanged.emit(message, 5000)
         else:
             self.showMessageDialog.emit("crit", self.tr("Ошибка сохранения файла"), message)
+
+    @Slot(str)
+    def exportChat(self, export_format: str):
+        """
+        Запускает процесс экспорта чата.
+        1. Запрашивает отформатированную строку у модели.
+        2. Формирует имя файла по умолчанию.
+        3. Вызывает диалог сохранения файла в View.
+        """
+        if export_format not in ['markdown', 'html']:
+            logger.error(f"Попытка экспорта в неизвестном формате: {export_format}")
+            return
+            
+        chat_content = self._model.export_chat_to_string(export_format)
+        
+        if not chat_content:
+            self.showMessageDialog.emit("info", self.tr("Экспорт невозможен"), self.tr("Диалог пуст, нечего экспортировать."))
+            return
+
+        # Формируем имя файла
+        session_name = self.tr("ChatExport")
+        if self._model._current_session_filepath:
+            session_name = os.path.basename(self._model._current_session_filepath).replace(db_manager.SESSION_EXTENSION, "")
+        
+        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        file_extension = ".md" if export_format == 'markdown' else ".html"
+        default_filename = f"{session_name}_{timestamp}{file_extension}"
+
+        # Определяем фильтр для диалога
+        if export_format == 'markdown':
+            file_filter = self.tr("Файлы Markdown (*.md)")
+        else: # html
+            file_filter = self.tr("Файлы HTML (*.html *.htm)")
+
+        # Вызываем диалог сохранения
+        self.showSaveFileDialogForExport.emit(default_filename, file_filter, chat_content)
 
     @Slot()
     def toggleSettings(self):

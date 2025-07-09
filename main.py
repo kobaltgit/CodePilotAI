@@ -1,7 +1,7 @@
 # --- Файл: main.py ---
 # --- Глобальные константы ---
 APP_NAME = "CodePilotAI"
-APP_VERSION = "2.2.0" # Пример версии
+APP_VERSION = "3.0.0" # Пример версии
 AUTHOR_NAME = "kobaltGIT"
 GITHUB_URL = "https://github.com/kobaltgit/CodePilotAI"
 APP_ICON_FILENAME = "app_icon.png"
@@ -23,10 +23,10 @@ from PySide6.QtWidgets import (
     QPushButton, QTextEdit, QLabel, QLineEdit, QFileDialog,
     QSizePolicy, QSpinBox, QMessageBox, QStatusBar, QGroupBox,
     QCheckBox, QDialog, QComboBox, QInputDialog, QStyle, QSplitter,
-    QListWidget, QListWidgetItem, QTabWidget, QProgressBar
+    QListWidget, QListWidgetItem, QTabWidget, QProgressBar, QMenu
 )
 from PySide6.QtCore import (
-    Qt, Slot, QUrl, QTimer, QCoreApplication, QFileInfo, QTranslator, QLocale, QSettings, QPoint, QSize
+    Qt, Slot, QUrl, QTimer, QCoreApplication, QFileInfo, QTranslator, QLocale, QSettings, QPoint, QSize, QEvent
 )
 from PySide6.QtGui import QAction, QKeySequence, QIcon, QFont, QActionGroup
 
@@ -230,6 +230,8 @@ class MainWindow(QMainWindow):
         projects_label = QLabel(self.tr("<b>Недавние проекты</b>"))
         self.projects_list_widget = QListWidget()
         self.projects_list_widget.setToolTip(self.tr("Двойной клик для открытия сессии"))
+        self.projects_list_widget.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.projects_list_widget.customContextMenuRequested.connect(self._show_projects_context_menu)
         projects_layout.addWidget(projects_label)
         projects_layout.addWidget(self.projects_list_widget)
         splitter.addWidget(self.projects_panel)
@@ -440,6 +442,23 @@ class MainWindow(QMainWindow):
             (self.tr("&Сохранить сессию"), QKeySequence.StandardKey.Save, self.view_model.saveSession),
             (self.tr("Сохранить сессию &как..."), QKeySequence.StandardKey.SaveAs, self.view_model.saveSessionAs),
             None,
+        ]
+
+            # --- НОВАЯ ЛОГИКА: Добавление подменю экспорта ---
+        export_menu = file_menu.addMenu(self.tr("Экспорт диалога"))
+        export_markdown_action = QAction(self.tr("в Markdown..."), self)
+        export_markdown_action.triggered.connect(lambda: self.view_model.exportChat('markdown'))
+        export_menu.addAction(export_markdown_action)
+        
+        export_html_action = QAction(self.tr("в HTML..."), self)
+        export_html_action.triggered.connect(lambda: self.view_model.exportChat('html'))
+        export_menu.addAction(export_html_action)
+        
+        file_menu.addSeparator()
+        # --- КОНЕЦ НОВОЙ ЛОГИКИ ---
+
+        remaining_actions = [
+
             (self.tr("Очистить список недавних проектов"), None, self._clear_recent_projects),
             None,
             (self.tr("&Выход"), QKeySequence.StandardKey.Quit, self.close)
@@ -535,6 +554,7 @@ class MainWindow(QMainWindow):
         # Сигналы от ViewModel к UI
         self.view_model.windowTitleChanged.connect(self._update_window_title)
         self.view_model.showSaveFileDialogForGeneratedCode.connect(self._show_save_generated_file_dialog)
+        self.view_model.showSaveFileDialogForExport.connect(self._show_save_exported_file_dialog)
         self.view_model.showDiffWindow.connect(self._show_diff_viewer_window)
         self.view_model.geminiApiKeyStatusTextChanged.connect(self._update_gemini_api_key_status)
         self.view_model.githubTokenStatusTextChanged.connect(self._update_github_token_status)
@@ -856,10 +876,67 @@ class MainWindow(QMainWindow):
         self.settings.setValue("recentProjects/list", paths[:MAX_RECENT_PROJECTS])
         self._load_recent_projects()
 
+    @Slot(QPoint)
+    def _show_projects_context_menu(self, pos: QPoint):
+        """Показывает контекстное меню для списка проектов."""
+        item = self.projects_list_widget.itemAt(pos)
+        if not item:
+            return
+
+        menu = QMenu()
+        open_action = menu.addAction(self.tr("Открыть проект"))
+        remove_action = menu.addAction(self.tr("Удалить из списка"))
+        
+        menu.addSeparator()
+        
+        export_submenu = menu.addMenu(self.tr("Экспорт текущего диалога"))
+        export_md_action = export_submenu.addAction(self.tr("в Markdown..."))
+        export_html_action = export_submenu.addAction(self.tr("в HTML..."))
+        
+        global_pos = self.projects_list_widget.mapToGlobal(pos)
+        selected_action = menu.exec(global_pos)
+
+        if selected_action == open_action:
+            self._on_recent_project_selected(item)
+        elif selected_action == remove_action:
+            self._remove_from_recent_projects(item)
+        elif selected_action == export_md_action:
+            self.view_model.exportChat('markdown')
+        elif selected_action == export_html_action:
+            self.view_model.exportChat('html')
+
+    @Slot(str, str, str)
+    def _show_save_exported_file_dialog(self, default_filename: str, file_filter: str, content: str):
+        """Открывает диалог сохранения для экспортированного чата."""
+        filepath, _ = QFileDialog.getSaveFileName(
+            self,
+            self.tr("Экспортировать диалог"),
+            os.path.join(os.path.expanduser("~"), default_filename),
+            file_filter
+        )
+        if filepath:
+            try:
+                with open(filepath, 'w', encoding='utf-8') as f:
+                    f.write(content)
+                self.statusBar().showMessage(self.tr("Диалог успешно экспортирован в '{0}'").format(os.path.basename(filepath)), 5000)
+            except Exception as e:
+                QMessageBox.critical(self, self.tr("Ошибка экспорта"), self.tr("Не удалось сохранить файл: {0}").format(e))
+
     @Slot()
     def _clear_recent_projects(self):
         self.settings.remove("recentProjects/list")
         self.projects_list_widget.clear()
+
+    def _remove_from_recent_projects(self, item: QListWidgetItem):
+        """Удаляет один проект из списка недавних."""
+        filepath_to_remove = item.data(Qt.ItemDataRole.UserRole)
+        if not filepath_to_remove: return
+
+        paths = self.settings.value("recentProjects/list", [], type=list)
+        if filepath_to_remove in paths:
+            paths.remove(filepath_to_remove)
+            self.settings.setValue("recentProjects/list", paths)
+            self._load_recent_projects() # Перезагружаем список, чтобы отразить удаление
 
     def closeEvent(self, event):
         if not self._check_dirty_state(self.tr("выходом из приложения")):

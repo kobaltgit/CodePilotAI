@@ -5,6 +5,7 @@ import re
 import json
 import logging
 import hashlib
+import html
 from typing import Optional, List, Dict, Any, Tuple, Union
 from io import BytesIO
 
@@ -1013,7 +1014,7 @@ class ChatModel(QObject):
     def _mark_dirty(self):
         if not self._is_dirty: self._is_dirty = True; self.sessionStateChanged.emit(self._current_session_filepath, True)
     def is_dirty(self) -> bool: return self._is_dirty
-    
+
     def get_original_file_content(self, file_path: str) -> Optional[str]:
         """
         Находит и возвращает оригинальное содержимое файла.
@@ -1090,3 +1091,116 @@ class ChatModel(QObject):
         except Exception as e:
             logger.error(f"Error saving generated file to {file_path}: {e}", exc_info=True)
             return False, self.tr("Ошибка сохранения файла '{0}': {1}").format(os.path.basename(file_path), e)
+        
+    def export_chat_to_string(self, export_format: str) -> Optional[str]:
+        """
+        Экспортирует историю чата в строку заданного формата.
+        :param export_format: 'markdown' или 'html'
+        :return: Строка с отформатированным чатом или None, если история пуста.
+        """
+        if not self._chat_history:
+            return None
+
+        if export_format == 'markdown':
+            return self._export_to_markdown()
+        elif export_format == 'html':
+            return self._export_to_html()
+        else:
+            logger.error(f"Неизвестный формат экспорта: {export_format}")
+            return None
+
+    def _export_to_markdown(self) -> str:
+        """Экспортирует чат в формат Markdown."""
+        from markdown import markdown as md_render
+        lines = []
+        for msg in self._chat_history:
+            role = msg.get("role")
+            content = (msg.get("parts", [""])[0] or "").strip()
+            
+            if role == "user":
+                prefix = self.tr("**Вы:**\n\n")
+                # Экранируем блочные цитаты, чтобы они не ломали форматирование
+                formatted_content = "> " + content.replace("\n", "\n> ")
+                lines.append(prefix + formatted_content)
+            elif role == "model":
+                prefix = self.tr("**ИИ:**\n\n")
+                lines.append(prefix + content)
+            elif role == "system":
+                prefix = self.tr("*Система: ")
+                lines.append(prefix + content.strip() + "*")
+            
+        return "\n\n---\n\n".join(lines)
+
+    def _export_to_html(self) -> str:
+        """Экспортирует чат в формат HTML, используя стили приложения."""
+        from markdown import markdown as md_render
+        
+        # Получаем CSS стили из шаблона чата для консистентности
+        # Это грязный, но эффективный способ без дублирования кода
+        css_styles = ""
+        try:
+            # Путь к шаблону чата
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            template_path = os.path.join(script_dir, "chat_template.html")
+            with open(template_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+                # Извлекаем содержимое тега <style>
+                start = content.find('<style>') + len('<style>')
+                end = content.find('</style>')
+                if start > -1 and end > -1:
+                    css_styles = content[start:end]
+        except Exception as e:
+            logger.warning(f"Не удалось прочитать CSS из chat_template.html: {e}")
+
+        # Собираем HTML сообщения
+        messages_html = []
+        for msg in self._chat_history:
+            role = msg.get("role")
+            content = msg.get("parts", [""])[0] or ""
+            
+            prefix_text = ""
+            if role == "user":
+                prefix_text = self.tr('Вы:')
+            elif role == "model":
+                prefix_text = self.tr('ИИ:')
+            
+            prefix_html = f'<span class="prefix">{prefix_text}</span>' if prefix_text else ""
+            
+            content_html = ""
+            if role == 'user':
+                content_html = f'<pre>{html.escape(content)}</pre>'
+            elif role == 'model':
+                content_html = md_render(content, extensions=["fenced_code", "codehilite", "nl2br", "tables"])
+            elif role == 'system':
+                content_html = f'<i>{html.escape(content)}</i>'
+            
+            messages_html.append(f"""
+                <div class="message {role}-message">
+                    {prefix_html}
+                    <div class="content">
+                        {content_html}
+                    </div>
+                </div>
+            """)
+
+        # Собираем финальный HTML документ
+        return f"""
+<!DOCTYPE html>
+<html lang="{self._app_language}">
+<head>
+    <meta charset="UTF-8">
+    <title>{self.tr("Экспорт диалога")}</title>
+    <style>
+        {css_styles}
+        /* Дополнительные стили для экспорта */
+        body {{ padding: 20px; }}
+        .message {{ max-width: 900px; margin: 0 auto 20px auto; }}
+    </style>
+</head>
+<body>
+    <div id="chat-container">
+        {''.join(messages_html)}
+    </div>
+</body>
+</html>
+        """
