@@ -200,17 +200,27 @@
         <translation>Part of the context was truncated due to the token limit.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="1090"/>
+        <location filename="../chat_model.py" line="936"/>
+        <source>Не удалось загрузить данные из файла сессии: {0}</source>
+        <translation>Failed to load data from session file: {0}</translation>
+    </message>
+    <message>
+        <location filename="../chat_model.py" line="998"/>
+        <source>Произошла критическая ошибка при обработке данных сессии. См. лог-файл для деталей.</source>
+        <translation>A critical error occurred while processing session data. See log file for details.</translation>
+    </message>
+    <message>
+        <location filename="../chat_model.py" line="1126"/>
         <source>Файл &apos;{0}&apos; успешно сохранен.</source>
         <translation>File &apos;{0}&apos; saved successfully.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="1093"/>
+        <location filename="../chat_model.py" line="1129"/>
         <source>Ошибка сохранения файла &apos;{0}&apos;: {1}</source>
         <translation>Error saving file &apos;{0}&apos;: {1}</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="1123"/>
+        <location filename="../chat_model.py" line="1159"/>
         <source>**Вы:**
 
 </source>
@@ -219,7 +229,7 @@
 </translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="1127"/>
+        <location filename="../chat_model.py" line="1163"/>
         <source>**ИИ:**
 
 </source>
@@ -228,17 +238,17 @@
 </translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="1130"/>
+        <location filename="../chat_model.py" line="1166"/>
         <source>*Система: </source>
         <translation>*System: </translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="1164"/>
+        <location filename="../chat_model.py" line="1200"/>
         <source>Вы:</source>
         <translation>You:</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="1167"/>
+        <location filename="../chat_model.py" line="1203"/>
         <source>ИИ:</source>
         <translation>AI:</translation>
     </message>
@@ -782,9 +792,8 @@ Now, please answer my original question using this new information.
         <translation>New session created.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="931"/>
         <source>Не удалось загрузить сессию: {0}</source>
-        <translation>Failed to load session: {0}</translation>
+        <translation type="vanished">Failed to load session: {0}</translation>
     </message>
     <message>
         <source>Предупреждение: сохраненная ветка &apos;{0}&apos; не найдена. Установлена ветка по умолчанию.</source>
@@ -795,17 +804,17 @@ Now, please answer my original question using this new information.
         <translation type="vanished">Warning: Failed to access repository &apos;{0}&apos;.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="962"/>
+        <location filename="../chat_model.py" line="988"/>
         <source>Сессия &apos;{0}&apos; загружена.</source>
         <translation>Session &apos;{0}&apos; loaded.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="980"/>
+        <location filename="../chat_model.py" line="1016"/>
         <source>Сессия сохранена.</source>
         <translation>Session saved.</translation>
     </message>
     <message>
-        <location filename="../chat_model.py" line="982"/>
+        <location filename="../chat_model.py" line="1018"/>
         <source>Не удалось сохранить сессию: {0}</source>
         <translation>Failed to save session: {0}</translation>
     </message>
@@ -1691,8 +1700,8 @@ will be included in the context.</translation>
     </message>
     <message>
         <location filename="../main.py" line="921"/>
-        <source>Диалог успешно экспортирован в '{0}'</source>
-        <translation>Dialogue successfully exported to '{0}'</translation>
+        <source>Диалог успешно экспортирован в &apos;{0}&apos;</source>
+        <translation>Dialogue successfully exported to &apos;{0}&apos;</translation>
     </message>
     <message>
         <location filename="../main.py" line="923"/>
