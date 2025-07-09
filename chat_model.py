@@ -925,6 +925,10 @@ class ChatModel(QObject):
         self.sessionLoaded.emit()
         self.statusMessage.emit(self.tr("Новая сессия создана."), 3000)
 
+    def get_current_session_filepath(self) -> Optional[str]:
+        """Возвращает путь к текущему файлу сессии, если он есть."""
+        return self._current_session_filepath
+
     def load_session(self, filepath: str):
         try:
             logger.debug(f"--- НАЧАЛО ЗАГРУЗКИ СЕССИИ: {os.path.basename(filepath)} ---")
