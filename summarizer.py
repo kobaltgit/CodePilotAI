@@ -13,6 +13,7 @@ from google.api_core import exceptions as google_exceptions
 
 # Импортируем наши сплиттеры
 from code_splitter import TreeSitterSplitter, RecursiveCharacterSplitter
+from ast_parser import ASTParser
 
 # Настраиваем логгер для этого модуля
 logger = logging.getLogger(__name__)
@@ -100,12 +101,14 @@ class SummarizerWorker(QObject):
         self.generative_model: Optional[genai.GenerativeModel] = None
 
         self.ts_splitter: Optional[TreeSitterSplitter] = None
+        self.ast_parser: Optional[ASTParser] = None
         self.fallback_splitter = RecursiveCharacterSplitter(chunk_size=1000, chunk_overlap=150)
         self.summarization_prompt_template = SUMMARIZATION_PROMPT_RU if app_lang == 'ru' else SUMMARIZATION_PROMPT_EN
         self._initialize_tree_sitter()
 
     def _initialize_tree_sitter(self):
-        """Пытается инициализировать TreeSitterSplitter."""
+        """Пытается инициализировать TreeSitterSplitter и ASTParser."""
+        lib_path = None
         try:
             if getattr(sys, 'frozen', False):
                 base_path = os.path.dirname(sys.executable)
@@ -122,15 +125,21 @@ class SummarizerWorker(QObject):
             
             lib_path = os.path.join(base_path, 'resources', 'grammars', lib_name)
 
-            if os.path.exists(lib_path):
-                self.ts_splitter = TreeSitterSplitter(lib_path)
-                logger.info("Tree-sitter сплиттер успешно инициализирован.")
-            else:
-                logger.warning(f"Скомпилированная библиотека грамматик не найдена по пути '{lib_path}'. Будет использоваться только рекурсивный сплиттер.")
-                self.ts_splitter = None
+            if not os.path.exists(lib_path):
+                 logger.warning(f"Скомпилированная библиотека грамматик не найдена по пути '{lib_path}'. Функции анализа кода будут ограничены.")
+                 self.ts_splitter = None
+                 self.ast_parser = None
+                 return
+            
+            # Инициализируем оба парсера с одним и тем же путем к библиотеке
+            self.ts_splitter = TreeSitterSplitter(lib_path)
+            self.ast_parser = ASTParser(lib_path)
+            logger.info("Tree-sitter сплиттер и AST-парсер успешно инициализированы.")
+
         except Exception as e:
-            logger.error(f"Ошибка при инициализации TreeSitterSplitter: {e}. Будет использоваться только рекурсивный сплиттер.")
+            logger.error(f"Критическая ошибка при инициализации инструментов Tree-sitter (путь: {lib_path}): {e}. Функции анализа кода будут ограничены.", exc_info=True)
             self.ts_splitter = None
+            self.ast_parser = None
     
     def cancel(self):
         """Запрашивает отмену операции."""
@@ -169,6 +178,22 @@ class SummarizerWorker(QObject):
 
                 display_path = os.path.relpath(file_path, self.project_source_path) if self.project_type == 'local' else file_path
                 context_for_this_file = []
+                
+                # --- НОВЫЙ ШАГ: АНАЛИЗ СТРУКТУРЫ КОДА (AST) ---
+                file_ext = os.path.splitext(display_path)[1]
+                language = self.ast_parser.get_language_from_extension(file_ext) if self.ast_parser else None
+                
+                if language and content:
+                    structure = self.ast_parser.parse_code_structure(content, language)
+                    if any(structure.values()): # Добавляем, только если что-то нашли
+                        context_for_this_file.append({
+                            'file_path': display_path,
+                            'type': 'structure',
+                            'content': structure, # Сохраняем как словарь
+                            'chunk_num': 0,
+                            'embedding': None
+                        })
+                # --- КОНЕЦ НОВОГО ШАГА ---
 
                 if self.rag_enabled:
                     summary_text = self._create_summary(display_path, content)
@@ -180,11 +205,9 @@ class SummarizerWorker(QObject):
                         chunks = self._split_into_chunks(display_path, content)
                         embeddings = []
                         if self.semantic_search_enabled and chunks:
-                            # Генерация эмбеддингов для чанков
                             embeddings = self._create_embeddings(chunks, display_path)
                             if self._is_cancelled: break
 
-                        # Совмещаем чанки с их эмбеддингами
                         for j, chunk_text in enumerate(chunks):
                             chunk_embedding = embeddings[j] if embeddings and j < len(embeddings) else None
                             context_for_this_file.append({

@@ -563,8 +563,12 @@ class ChatModel(QObject):
         prompt_token_budget = CONTEXT_WINDOW_LIMIT - self._max_output_tokens
         current_tokens = 0
 
+        # --- НОВЫЙ ШАГ: Сборка карты проекта (Code Graph) ---
+        project_structure_map = self._build_project_structure_map()
+        # --- КОНЕЦ НОВОГО ШАГА ---
+
         # 1. Системные инструкции
-        instructions_text = self._build_system_instructions()
+        instructions_text = self._build_system_instructions(project_structure_map)
         instructions_part = [
             {"role": "user", "parts": [instructions_text]},
             {"role": "model", "parts": [self.tr("OK. Я готов к работе.")]}
@@ -645,7 +649,7 @@ class ChatModel(QObject):
                 cleaned_list.append(msg); last_role = current_role
         return cleaned_list
 
-    def _build_system_instructions(self) -> str:
+    def _build_system_instructions(self, project_structure_map: str) -> str:
         # --- Наша внутренняя, "секретная" инструкция ---
         file_save_instruction_ru = "ВАЖНОЕ ПРАВИЛО: Если ты генерируешь код для совершенно нового файла, всегда указывай предлагаемое имя файла на отдельной строке прямо перед блоком кода в формате `File: path/to/filename.ext`."
         file_save_instruction_en = "IMPORTANT RULE: If you generate code for a brand new file, always specify the suggested filename on a separate line right before the code block, in the format `File: path/to/filename.ext`."
@@ -668,11 +672,63 @@ class ChatModel(QObject):
 
         # Собираем финальный промпт
         final_parts = [internal_instruction, base_instructions]
+        
+        # Добавляем карту структуры проекта, если она есть
+        if project_structure_map:
+            final_parts.append(project_structure_map)
+
         if user_instructions_text:
-            user_instructions_header = self.tr("Дополнительные инструкции:")
+            user_instructions_header = self.tr("Дополнительные инструкции от пользователя:")
             final_parts.append(f"{user_instructions_header}\n{user_instructions_text}")
 
         return "\n\n".join(part for part in final_parts if part)
+
+    def _build_project_structure_map(self) -> str:
+        """
+        Собирает текстовое представление структуры проекта (Code Graph)
+        из данных, полученных от AST-парсера.
+        """
+        structure_items = [item for item in self._project_context if item.get('type') == 'structure']
+        if not structure_items:
+            return ""
+
+        output_lines = [self.tr("--- Обзор структуры проекта (Code-Graph) ---")]
+        
+        # Группируем по файлам
+        files_map = {}
+        for item in structure_items:
+            file_path = item.get('file_path')
+            if file_path not in files_map:
+                files_map[file_path] = {}
+            # Объединяем словари, если для одного файла пришло несколько (хотя не должно)
+            files_map[file_path].update(item.get('content', {}))
+
+        sorted_files = sorted(files_map.keys())
+
+        for file_path in sorted_files:
+            structure = files_map[file_path]
+            output_lines.append(f"\nFile: {file_path}")
+            
+            imports = structure.get('imports')
+            if imports:
+                output_lines.append("  - Imports:")
+                for imp in imports:
+                    output_lines.append(f"    - {imp}")
+            
+            classes = structure.get('classes')
+            if classes:
+                output_lines.append("  - Defines Classes:")
+                for class_name, inheritance in classes.items():
+                    output_lines.append(f"    - {class_name}{inheritance}")
+
+            functions = structure.get('functions')
+            if functions:
+                output_lines.append("  - Defines Functions:")
+                for func_sig in functions:
+                    output_lines.append(f"    - {func_sig}")
+        
+        output_lines.append("\n--- Конец обзора структуры ---")
+        return "\n".join(output_lines)
 
     def _build_context_string(self, remaining_budget_tokens: int) -> str:
         """

@@ -1,7 +1,7 @@
 # --- Файл: main.py ---
 # --- Глобальные константы ---
 APP_NAME = "CodePilotAI"
-APP_VERSION = "2.0.0" # Пример версии
+APP_VERSION = "2.2.0" # Пример версии
 AUTHOR_NAME = "kobaltGIT"
 GITHUB_URL = "https://github.com/kobaltgit/CodePilotAI"
 APP_ICON_FILENAME = "app_icon.png"

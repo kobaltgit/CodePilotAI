@@ -7,6 +7,7 @@ from typing import List, Dict, Tuple, Optional
 
 # Импортируем tree-sitter и его компоненты
 from tree_sitter import Language, Parser
+from ast_parser import LANGUAGE_MAP as AST_LANGUAGE_MAP
 
 logger = logging.getLogger(__name__)
 
@@ -86,30 +87,9 @@ class TreeSitterSplitter:
         "java", "c_sharp", "cpp", "go", "ruby", "rust", "bash", "yaml"
     )
 
-    # Обновленная карта расширений файлов к КОНКРЕТНЫМ именам языков из списка выше.
-    # Файлы с расширениями удаленных языков теперь будут обрабатываться fallback-сплиттером.
-    LANGUAGE_MAP: Dict[str, str] = {
-        ".py": "python",
-        ".js": "javascript",
-        ".html": "html",
-        ".css": "css",
-        ".json": "json",
-        ".java": "java",
-        ".cs": "c_sharp",
-        ".cpp": "cpp",
-        ".h": "cpp",
-        ".hpp": "cpp",
-        ".go": "go",
-        ".rb": "ruby",
-        ".rs": "rust",
-        ".sh": "bash",
-        ".yml": "yaml",
-        ".yaml": "yaml",
-        # ".ts": "typescript", # Удалены
-        # ".tsx": "tsx",       # Удалены
-        # ".php": "php",       # Удалены
-        # ".sql": "sql",       # Удалены
-    }
+    # Карта расширений теперь импортируется из ast_parser, чтобы избежать дублирования
+    # и гарантировать консистентность между двумя модулями.
+    LANGUAGE_MAP: Dict[str, str] = AST_LANGUAGE_MAP
     
     # Карта языков к типам узлов, по которым нужно делать основное разделение.
     # Ключи здесь - это КОНКРЕТНЫЕ имена языков.

@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS messages (
 CREATE TABLE IF NOT EXISTS context_data (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     file_path TEXT NOT NULL,
-    type TEXT NOT NULL CHECK(type IN ('summary', 'chunk', 'full_file')), -- Тип контента
+    type TEXT NOT NULL CHECK(type IN ('summary', 'chunk', 'full_file', 'structure')), -- Тип контента
     chunk_num INTEGER, -- Порядковый номер чанка (для type='chunk')
     content TEXT NOT NULL,
     embedding BLOB, -- Векторное представление чанка (для type='chunk' и семантического поиска)
@@ -146,11 +146,20 @@ def load_session_data(
             for row in context_cursor.fetchall():
                 item = dict(row)
 
+                # --- НОВАЯ ЛОГИКА: Обработка JSON для типа 'structure' ---
+                if item.get('type') == 'structure' and isinstance(item.get('content'), str):
+                    try:
+                        item['content'] = json.loads(item['content'])
+                    except json.JSONDecodeError:
+                        logger.warning(f"Не удалось декодировать JSON для структуры файла {item.get('file_path')}. Элемент будет пропущен.")
+                        continue # Пропускаем поврежденный элемент
+                # --- КОНЕЦ НОВОЙ ЛОГИКИ ---
+
                 # Десериализация эмбеддинга
                 if 'embedding' in item and item['embedding'] is not None:
                     try:
                         buffer = BytesIO(item['embedding'])
-                        item['embedding'] = np.load(buffer)
+                        item['embedding'] = np.load(buffer, allow_pickle=True) # Добавлено allow_pickle для совместимости
                     except Exception as e:
                         logger.warning(f"Не удалось десериализовать эмбеддинг для '{item.get('file_path')}': {e}. Эмбеддинг будет проигнорирован.")
                         item['embedding'] = None
@@ -165,7 +174,6 @@ def load_session_data(
                         item['chunk_num'] = 0
 
                 context_data_list.append(item)
-
 
         logger.info(f"Сессия загружена. Метаданные: {len(metadata)} полей, Сообщений: {len(messages_list)}, Элементов контекста: {len(context_data_list)}")
         return metadata, messages_list, context_data_list
@@ -241,6 +249,7 @@ def save_session_data(
                 )
 
                 # Сохранение контекста
+                # Сохранение контекста
                 cursor.execute("DELETE FROM context_data;")
                 context_to_insert = []
                 for item in context_data_list:
@@ -254,6 +263,12 @@ def save_session_data(
                         except Exception as e:
                             logger.warning(f"Не удалось сериализовать эмбеддинг для '{item.get('file_path')}': {e}. Эмбеддинг не будет сохранен.")
 
+                    # --- НОВАЯ ЛОГИКА: Сериализация 'content' в JSON для типа 'structure' ---
+                    content_to_save = item.get("content")
+                    if item.get('type') == 'structure' and isinstance(content_to_save, dict):
+                        content_to_save = json.dumps(content_to_save, ensure_ascii=False)
+                    # --- КОНЕЦ НОВОЙ ЛОГИКИ ---
+
                     chunk_num_val = item.get("chunk_num")
                     if chunk_num_val is None or not isinstance(chunk_num_val, int):
                         chunk_num_val = 0
@@ -262,7 +277,7 @@ def save_session_data(
                         item.get("file_path"),
                         item.get("type"),
                         chunk_num_val,
-                        item.get("content"),
+                        content_to_save,
                         embedding_blob
                     ))
 
