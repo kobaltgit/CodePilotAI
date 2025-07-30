@@ -1,41 +1,44 @@
 # CodePilotAI v3.0.0
 
-**Универсальный ИИ-ассистент для анализа и работы с кодовой базой с функцией визуального сравнения изменений.**
+[Читать на русском](README_ru.md)
 
-CodePilotAI позволяет вести диалог с языковой моделью Google Gemini, используя файлы вашего проекта (из GitHub или локальной папки) в качестве контекста. В этой версии основной упор сделан на удобство работы с изменениями кода и экспорт результатов вашей работы.
+**A universal AI assistant for analyzing and working with codebases, featuring visual diff comparison.**
 
-[**ИНСТРУКЦИЯ ПО РАБОТЕ С ПРОГРАММОЙ**](instruction.md)
+CodePilotAI allows you to converse with the Google Gemini language model, using your project files (from GitHub or a local folder) as context. This version focuses on improving the convenience of working with code changes and exporting your work.
+
+[**INSTRUCTION MANUAL**](instruction_en.md)
 
 <a href="https://ibb.co/pjjh2z0F"><img src="https://i.ibb.co/8ggYM5KZ/Screenshot-32.png" alt="Screenshot-32" border="0"></a>
 
-## 🚀 Ключевые нововведения v3.0.0
+## 🚀 Key New Features in v3.0.0
 
-В дополнение ко всем возможностям предыдущих версий, v3.0.0 представляет новые инструменты для повышения продуктивности:
+In addition to all the capabilities of previous versions, v3.0.0 introduces new tools to boost productivity:
 
-*   **Визуальный просмотрщик изменений (Diff Viewer):** Больше не нужно мысленно сравнивать код. Если ИИ предлагает изменения, кнопка **"Показать изменения"** открывает наглядное окно, где оригинальный и предложенный код сравниваются бок о бок с подсветкой всех добавлений, удалений и правок.
-*   **Экспорт диалогов в Markdown и HTML:** Сохраняйте всю историю вашего диалога в один клик. Идеально для создания документации, написания статей или обмена решениями с коллегами. HTML-экспорт сохраняет стили и подсветку кода из приложения.
-*   **Расширенное управление сессиями:**
-    *   **Обратная совместимость:** Приложение теперь корректно открывает файлы сессий, созданные в более старых версиях программы, автоматически мигрируя их "на лету".
-    *   **Контекстное меню:** Клик правой кнопкой мыши по списку недавних проектов теперь открывает меню для быстрого открытия, удаления или экспорта текущего диалога.
-*   **Улучшения интерфейса:**
-    *   **Индикатор сети:** В строке состояния теперь есть индикатор, показывающий, доступен ли интернет (зеленый — онлайн, красный — оффлайн).
-    *   **Очистка предупреждений:** Убраны устаревшие вызовы API, что делает лог запуска чище.
+*   **Visual Diff Viewer:** No more mental code comparison. If the AI suggests changes, the **"Show Changes"** button opens a clear window where original and proposed code are compared side-by-side, highlighting all additions, deletions, and modifications.
+*   **Export Dialogs to Markdown and HTML:** Save your entire conversation history with a single click. Ideal for creating documentation, writing articles, or sharing solutions with colleagues. HTML export preserves styling and code highlighting from the application.
+*   **Enhanced Session Management:**
+    *   **Backward Compatibility:** The application now correctly opens session files created in older program versions, automatically migrating them on the fly.
+    *   **Context Menu:** Right-clicking on the list of recent projects now opens a menu for quickly opening, deleting, or exporting the current conversation.
+*   **Interface Improvements:**
+    *   **Network Indicator:** The status bar now includes an indicator showing internet availability (green for online, red for offline).
+    *   **Warning Cleanup:** Obsolete API calls have been removed, resulting in a cleaner startup log.
 
-### 🧠 Анализ структуры проекта с Code-Graph
+### 🧠 Analyze Project Structure with Code-Graph
 
-Это ключевое нововведение версии 2.2.0. Мы научили ассистента не просто читать файлы, а **понимать их структуру и взаимосвязи**.
+This is a key new feature in version 2.2.0. We taught the assistant not just to read files, but to **understand their structure and interdependencies**.
 
-**Как это работает?**
-При анализе проекта CodePilotAI теперь строит **"карту" вашего кода (Code-Graph)**. С помощью Tree-sitter он извлекает из каждого файла ключевую информацию:
-*   Какие модули он импортирует.
-*   Какие функции и классы определяет.
-*   От каких классов наследуются другие.
+**How it works:**
+When analyzing a project, CodePilotAI now builds a **"map" of your code (Code-Graph)**. Using Tree-sitter, it extracts key information from each file:
+*   Which modules it imports.
+*   Which functions and classes it defines.
+*   From which classes others inherit.
 
-Эта карта передается ИИ вместе с кодом. В результате ИИ видит не просто набор файлов, а целостную архитектуру.
+This map is passed to the AI along with the code. As a result, the AI sees not just a collection of files, but a holistic architecture.
 
-**Пример Code-Graph:**
+**Code-Graph Example:**
 ```
 --- Обзор структуры проекта (Code-Graph) ---
+
 
 File: main.py
   - Imports:
@@ -43,68 +46,67 @@ File: main.py
   - Defines Functions:
     - main()
 
+
 File: utils.py
   - Defines Functions:
     - greet_user(name: str)
     - add_numbers(a: int, b: int)
 ```
 
-**Преимущества:**
-*   **Глубокое понимание:** ИИ может отвечать на сложные архитектурные вопросы, например: "Какие части проекта затронет изменение этой функции?".
-*   **Точность:** Снижается вероятность "галлюцинаций", так как ИИ точно знает, где какая функция определена.
-*   **Работает во всех режимах:** Code-Graph дополняет и улучшает каждый из трех режимов анализа.
+**Advantages:**
+*   **Deep Understanding:** The AI can answer complex architectural questions, such as: "Which parts of the project will be affected by changing this function?"
+*   **Accuracy:** Reduces the likelihood of "hallucinations" because the AI precisely knows where each function is defined.
+*   **Works Across All Modes:** Code-Graph complements and improves each of the three analysis modes.
 
 ### Modes of Analysis
 
-| Режим | Как работает | Лучше всего подходит для |
+| Mode | How it works | Best suited for |
 | :--- | :--- | :--- |
-| **Без RAG (Полные файлы)** | Карта проекта (Code-Graph) + полный код всех файлов. | Очень маленькие проекты. |
-| **RAG (стандартный)** | Карта проекта + обзоры всех файлов + весь код в виде чанков. | Малые и средние проекты. |
-| **RAG + Семантический поиск**| Карта проекта + обзоры + только наиболее релевантные вашему вопросу чанки. | Крупные проекты. **Максимальная эффективность.** |
+| **No RAG (Full Files)** | Project Map (Code-Graph) + full code of all files. | Very small projects. |
+| **RAG (Standard)** | Project Map + file summaries + all code in chunks. | Small and medium projects. |
+| **RAG + Semantic Search**| Project Map + summaries + only the most relevant chunks to your query. | Large projects. **Maximum efficiency.** |
 
-### 🛠️ Интерактивный рабочий процесс
+### 🛠️ Interactive Workflow*   **Update from Git:** If you're working with a local Git repository, the **"Update"** button quickly re-analyzes only the modified files.
+*   **Saving Generated Files:** If the AI suggests code for a new file, the **"Save As..."** button will automatically prompt you to save it with the appropriate name in the project folder.
+*   **Viewing Changes (Diff Viewer):** If the AI suggests changes for an existing file, the **"Show Changes"** button will open a window for visual version comparison.
+*   **Session Management:** All work (chat history, settings, context) is saved into a single `.cpai` file.
 
-*   **Обновление из Git:** Если вы работаете с локальным Git-репозиторием, кнопка **"Обновить"** позволяет быстро переанализировать только измененные файлы.
-*   **Сохранение сгенерированных файлов:** Если ИИ предлагает код для нового файла, кнопка **"Сохранить как..."** автоматически предложит сохранить его под нужным именем в папке проекта.
-*   **Просмотр изменений (Diff Viewer):** Если ИИ предлагает изменения для существующего файла, кнопка **"Показать изменения"** откроет окно для визуального сравнения версий.
-*   **Управление сессиями:** Вся работа (история чата, настройки, контекст) сохраняется в единый файл `.cpai`.
-
-## 🛠️ Стек технологий
+## 🛠️ Technology Stack
 
 *   **GUI:** Python + PySide6 (Qt for Python)
-*   **Языковая модель:** Google Gemini API (`google-generativeai`)
-*   **Работа с GitHub:** PyGithub
-*   **Работа с Git:** GitPython
-*   **Парсинг кода (AST & Chunks):** Tree-sitter
-*   **Семантический поиск:** `numpy`
-*   **Рендеринг ответов:** Markdown, Pygments
-*   **Сравнение версий:** `difflib`
-*   **Хранение сессий:** SQLite (внутри файла `.cpai`)
-*   **Управление окружением:** `python-dotenv`
+*   **Language Model:** Google Gemini API (`google-generativeai`)
+*   **GitHub Integration:** PyGithub
+*   **Git Integration:** GitPython
+*   **Code Parsing (AST & Chunks):** Tree-sitter
+*   **Semantic Search:** `numpy`
+*   **Response Rendering:** Markdown, Pygments
+*   **Version Comparison:** `difflib`
+*   **Session Storage:** SQLite (within the `.cpai` file)
+*   **Environment Management:** `python-dotenv`
 
-## ⚙️ Установка и запуск
+## ⚙️ Installation and Setup
 
-Для разворачивания проекта на локальной машине выполните следующие шаги.
+To set up the project on your local machine, follow these steps.
 
-### 1. Предварительные требования
+### 1. Prerequisites
 
-*   Python 3.10 или выше.
+*   Python 3.10 or higher.
 *   Git.
-*   **Инструменты сборки C/C++** для вашей ОС (необходимо для компиляции Tree-sitter).
-    *   **Windows:** Установите "Build Tools for Visual Studio" (с рабочей нагрузкой "Разработка классических приложений на C++").
+*   **C/C++ build tools** for your OS (required for Tree-sitter compilation).
+    *   **Windows:** Install "Build Tools for Visual Studio" (with the "Desktop development with C++" workload).
     *   **Linux (Debian/Ubuntu):** `sudo apt-get install build-essential`
     *   **macOS:** `xcode-select --install`
 
-### 2. Клонирование репозитория
+### 2. Clone the Repository
 
 ```bash
 git clone https://github.com/kobaltgit/CodePilotAI
 cd CodePilotAI
 ```
 
-### 3. Создание и активация виртуального окружения
+### 3. Create and Activate a Virtual Environment
 
-Настоятельно рекомендуется использовать виртуальное окружение.
+It is highly recommended to use a virtual environment.
 
 *   Windows (Command Prompt):
 ```bash
@@ -118,93 +120,107 @@ python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-### 4. Установка зависимостей
+### 4. Install Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-**Важно:** Для работы чата используется `QtWebEngine`. Если он не установился автоматически с `PySide6`, установите его отдельно:
+**Important:** `QtWebEngine` is used for the chat functionality. If it doesn't install automatically with `PySide6`, install it separately:
 ```bash
 pip install PySide6-WebEngine
 ```
 
-### 5. Компиляция грамматик Tree-sitter (обязательно)
+### 5. Compile Tree-sitter Grammars (Mandatory)
 
-Для интеллектуального анализа кода приложению требуются скомпилированные грамматики языков.
+For intelligent code analysis, the application requires compiled language grammars.1. In the project's root folder, create a new folder named `grammars`.
+2. Clone the repositories with the necessary grammars into this folder. The recommended set includes:
+```bash
+cd grammars
+git clone https://github.com/tree-sitter/tree-sitter-python
+git clone https://github.com/tree-sitter/tree-sitter-javascript
+git clone https://github.com/tree-sitter/tree-sitter-html
+git clone https://github.com/tree-sitter/tree-sitter-css
+git clone https://github.com/tree-sitter/tree-sitter-json
+git clone https://github.com/tree-sitter/tree-sitter-java
+git clone https://github.com/tree-sitter/tree-sitter-c-sharp
+git clone https://github.com/tree-sitter/tree-sitter-cpp
+git clone https://github.com/tree-sitter/tree-sitter-go
+git clone https://github.com/tree-sitter/tree-sitter-ruby
+git clone https://github.com/tree-sitter/tree-sitter-rust
+git clone https://github.com/tree-sitter/tree-sitter-bash
+git clone https://github.com/ikatyang/tree-sitter-yaml
+cd ..
+```
+3. Run the compilation script from the project's root directory:
+```bash
+python build_grammars.py
+```
+4. This will create a single library file (e.g., `languages.dll` for Windows) in the `resources/grammars` folder.
 
-1.  В корневой папке проекта создайте новую папку с именем `grammars`.
-2.  Склонируйте репозитории с нужными грамматиками в эту папку. Рекомендуемый набор включает:
-    ```bash
-    cd grammars
-    git clone https://github.com/tree-sitter/tree-sitter-python
-    git clone https://github.com/tree-sitter/tree-sitter-javascript
-    git clone https://github.com/tree-sitter/tree-sitter-html
-    git clone https://github.com/tree-sitter/tree-sitter-css
-    git clone https://github.com/tree-sitter/tree-sitter-json
-    git clone https://github.com/tree-sitter/tree-sitter-java
-    git clone https://github.com/tree-sitter/tree-sitter-c-sharp
-    git clone https://github.com/tree-sitter/tree-sitter-cpp
-    git clone https://github.com/tree-sitter/tree-sitter-go
-    git clone https://github.com/tree-sitter/tree-sitter-ruby
-    git clone https://github.com/tree-sitter/tree-sitter-rust
-    git clone https://github.com/tree-sitter/tree-sitter-bash
-    git clone https://github.com/ikatyang/tree-sitter-yaml
-    cd ..
-    ```
-3.  Запустите скрипт компиляции из корневого каталога проекта:
-    ```bash
-    python build_grammars.py
-    ```
-4.  Это создаст единый файл библиотеки (например, `languages.dll` для Windows) в папке `resources/grammars`.
 
-### 6. Настройка ключей доступа
+### 6. Setting up Access Keys
 
-Приложению требуется как минимум ключ от Google Gemini. Ключ GitHub необходим для работы с репозиториями на GitHub.
 
-1.  Создайте в корневой папке проекта файл с именем `.env`.
-2.  Откройте его в текстовом редакторе и добавьте строки:
+The application requires at least a Google Gemini key. A GitHub key is necessary for working with repositories on GitHub.
+
+
+1. In the project's root folder, create a file named `.env`.
+2. Open it in a text editor and add the lines:
 ```
 GEMINI_API_KEY="ВАШ_GEMINI_API_КЛЮЧ"
 GITHUB_TOKEN="ВАШ_GITHUB_PAT"
 ```
 
-*   **GEMINI_API_KEY:** Получите ключ в [Google AI Studio](https://makersuite.google.com/app/apikey).
-*   **GITHUB_TOKEN:** Создайте Personal Access Token (classic) в [настройках GitHub](https://github.com/settings/tokens). При создании токена обязательно поставьте галочку в секции `repo`.
 
-В качестве альтернативы, вы можете запустить программу и ввести ключи через интерфейс. Они будут автоматически сохранены в `.env` файл.
+*   **GEMINI_API_KEY:** Get your key from [Google AI Studio](https://makersuite.google.com/app/apikey).
+*   **GITHUB_TOKEN:** Create a Personal Access Token (classic) in [GitHub settings](https://github.com/settings/tokens). When creating the token, make sure to check the box in the `repo` section.
 
-### 7. Запуск приложения
+
+Alternatively, you can run the program and enter the keys via the interface. They will be automatically saved to the `.env` file.
+
+
+### 7. Running the Application
+
 
 ```bash
 python main.py
 ```
 
-## 📖 Как пользоваться
 
-1.  **Настройка (первый запуск):** Если вы не создали `.env` файл, введите и сохраните ваши ключи API в разделе "Настройки".
-2.  **Выберите источник:** Выберите вкладку "GitHub Репозиторий" или "Локальная папка" и укажите источник.
-3.  **Выберите режим анализа:** В разделе "Настройки" выберите наиболее подходящий режим (Полный, RAG, или RAG + Семантический поиск).
-4.  **Анализ:** Нажмите кнопку **"Анализировать"**. Прогресс будет отображаться на новом прогресс-баре.
-5.  **Диалог:** После завершения анализа вы можете задавать вопросы.
-    *   Если вы изменили файлы в локальном Git-репозитории, нажмите **"Обновить"** для быстрого переанализа.
-    *   Если ИИ предложит сохранить новый файл, используйте кнопку **"Сохранить как..."** рядом с блоком кода.
-6.  **Сохранение:** Чтобы не анализировать проект каждый раз, сохраните сессию через меню **Файл -> Сохранить сессию**.
+## 📖 How to Use
 
-## 📝 Меню
 
-### Меню "Файл"
-Стандартные действия для управления сессиями (Новая, Открыть, Сохранить) и выход из приложения.
+1.  **Setup (first run):** If you haven't created the `.env` file, enter and save your API keys in the "Settings" section.
+2.  **Select source:** Choose the "GitHub Repository" or "Local Folder" tab and specify the source.
+3.  **Select analysis mode:** In the "Settings" section, choose the most suitable mode (Full, RAG, or RAG + Semantic Search).
+4.  **Analyze:** Click the **"Analyze"** button. Progress will be displayed on a new progress bar.
+5.  **Dialogue:** After the analysis is complete, you can ask questions.
+    *   If you've modified files in the local Git repository, click **"Refresh"** for a quick re-analysis.
+    *   If the AI suggests saving a new file, use the **"Save as..."** button next to the code block.
+6.  **Saving:** To avoid analyzing the project every time, save the session via the menu **File -> Save Session**.
 
-### Меню "Вид"
-**Показать Логи (Ctrl+L):** Открывает отдельное окно, в котором в реальном времени отображаются подробные логи работы приложения.
 
-### Меню "Язык"
-Позволяет выбрать язык интерфейса (Русский/English). Изменения вступят в силу после перезапуска программы.
+## 📝 Menu
 
-### Меню "Справка"
-Открывает окно справки и информацию о программе.
 
-## 📄 Лицензия
+### "File" Menu
+Standard actions for managing sessions (New, Open, Save) and exiting the application.
 
-Проект распространяется под лицензией MIT. Подробности см. в файле `LICENSE`.
+
+### "View" Menu
+**Show Logs (Ctrl+L):** Opens a separate window displaying detailed application logs in real-time.
+
+
+### "Language" Menu
+Allows you to select the interface language (Russian/English). Changes will take effect after restarting the program.
+
+
+### "Help" Menu
+Opens the help window and program information.
+
+
+## 📄 License
+
+
+The project is distributed under the MIT license. See the `LICENSE` file for details.
